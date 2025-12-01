@@ -277,6 +277,21 @@
       color: #9ca3af;
       margin-top: 12px;
     }
+
+    /* Ajustements uniquement mobile */
+    @media (max-width: 640px) {
+      .badge {
+        font-size: 0.65rem;
+        padding: 2px 6px;
+      }
+      .event-count {
+        top: 4px;
+        right: 6px;
+        left: auto;
+        bottom: auto;
+        font-size: 0.65rem;
+      }
+    }
   </style>
 </head>
 <body>
@@ -510,8 +525,13 @@
             return (a.time || "").localeCompare(b.time || "");
           });
 
-        document.getElementById("last-refresh").textContent =
-          "Dernière maj: " + new Date().toLocaleString("fr-CH");
+        const lr = document.getElementById("last-refresh");
+        const nowStr = new Date().toLocaleString("fr-CH");
+        if (window.innerWidth <= 640) {
+          lr.textContent = nowStr;
+        } else {
+          lr.textContent = "Dernière maj: " + nowStr;
+        }
 
         renderCalendar();
         renderEventsPanel();
@@ -555,6 +575,7 @@
       grid.innerHTML = "";
 
       const selectedKey = formatDateKey(SELECTED_DATE);
+      const isMobile = window.innerWidth <= 640;
 
       for (let i = 0; i < totalCells; i++) {
         const cell = document.createElement("div");
@@ -623,15 +644,18 @@
 
           const count = document.createElement("div");
           count.className = "event-count";
-          count.textContent =
-            eventsForDay.length +
-            " prod" +
-            (eventsForDay.length > 1 ? "s" : "");
+          if (isMobile) {
+            count.textContent = eventsForDay.length;
+          } else {
+            count.textContent =
+              eventsForDay.length +
+              " prod" +
+              (eventsForDay.length > 1 ? "s" : "");
+          }
           cell.appendChild(count);
         }
 
-        const cellDateKey = formatDateKey(cellDate);
-        if (cellDateKey === selectedKey) {
+        if (dateKey === selectedKey) {
           cell.classList.add("selected");
         }
 
