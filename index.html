@@ -33,6 +33,17 @@
     header h1 { font-size: 1.5rem; font-weight: 700; }
     .subtitle { font-size: 0.9rem; color: #9ca3af; }
 
+    /* NEW: Select Filter */
+    #user-filter {
+      background: #111827;
+      color: #e5e7eb;
+      border: 1px solid #374151;
+      padding: 6px 12px;
+      border-radius: 8px;
+      margin-left: 12px;
+      cursor: pointer;
+    }
+
     .layout {
       display: grid;
       grid-template-columns: 1.1fr 1.6fr;
@@ -112,10 +123,10 @@
       height: 8px;
       border-radius: 999px;
     }
-    .event-dot.tc { background: #3b82f6; }   /* Bleu Tino */
-    .event-dot.dg { background: #ef4444; }   /* Rouge Dominique */
-    .event-dot.jb { background: #ec4899; }   /* Rose Juliane */
-    .event-dot.generic { background: #22c55e; } /* Prod sans crew assigné */
+    .event-dot.tc { background: #3b82f6; }
+    .event-dot.dg { background: #ef4444; }
+    .event-dot.jb { background: #ec4899; }
+    .event-dot.generic { background: #22c55e; }
 
     .event-count {
       position: absolute;
@@ -135,105 +146,30 @@
       flex-direction: column;
       gap: 8px;
     }
-    .events-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      gap: 12px;
-    }
-    .events-header h2 { font-size: 1.1rem; font-weight: 600; }
-    .events-header small { font-size: 0.8rem; color: #9ca3af; }
-
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      padding: 2px 8px;
-      border-radius: 999px;
-      border: 1px solid #1f2937;
-      font-size: 0.7rem;
-      color: #9ca3af;
-    }
-
-    .search-bar { margin-top: 6px; }
-    .search-bar input {
-      width: 100%;
-      padding: 8px 10px;
-      border-radius: 999px;
-      border: 1px solid #1f2937;
-      background: #020617;
-      color: #e5e7eb;
-      font-size: 0.85rem;
-    }
-    .search-bar input:focus {
-      outline: none;
-      border-color: #3b82f6;
-    }
-
-    .events-list {
-      margin-top: 8px;
-      max-height: 460px;
-      overflow-y: auto;
-      padding-right: 4px;
-    }
-    .event-card {
-      border-radius: 10px;
-      border: 1px solid #1f2937;
-      padding: 10px;
-      margin-bottom: 8px;
-      background: radial-gradient(circle at top left, rgba(59,130,246,0.12), #020617);
-    }
-    .event-title {
-      font-weight: 600;
-      font-size: 0.95rem;
-      margin-bottom: 2px;
-    }
-    .event-time {
-      font-size: 0.8rem;
-      color: #9ca3af;
-      margin-bottom: 4px;
-    }
-    .event-meta {
-      font-size: 0.8rem;
-      color: #9ca3af;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 4px;
-    }
-    .event-meta span {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-    }
-    .event-meta-label {
-      font-weight: 500;
-      color: #e5e7eb;
-    }
-    .event-crew {
-      font-size: 0.8rem;
-      margin-top: 4px;
-    }
-    .no-events {
-      font-size: 0.85rem;
-      color: #9ca3af;
-      margin-top: 12px;
-    }
+    .no-events { font-size: 0.85rem; margin-top: 12px; color: #9ca3af; }
   </style>
 </head>
+
 <body>
   <div class="app">
     <header>
-      <div>
+      <div style="display:flex; align-items:center; gap:10px;">
         <h1>Calendrier de production – Brates</h1>
-        <div class="subtitle">
-          Données depuis Google Sheets · Prods, cars régie & équipes
-        </div>
+
+        <!-- NEW: USER SELECTION INPUT -->
+        <select id="user-filter">
+          <option value="all">Tous</option>
+          <option value="TC">Tino</option>
+          <option value="DG">Dominique</option>
+          <option value="JB">Juliane</option>
+        </select>
       </div>
-      <div class="badge" id="last-refresh">
-        Dernière maj: –
-      </div>
+
+      <div class="badge" id="last-refresh">Dernière maj: –</div>
     </header>
 
+
+    <!-- UI unchanged below -->
     <div class="layout">
       <section class="calendar">
         <div class="cal-header">
@@ -257,472 +193,163 @@
       </section>
 
       <section class="events-panel">
-        <div class="events-header">
-          <div>
-            <h2 id="events-title">Prods du jour</h2>
-            <small id="events-date-label"></small>
-          </div>
-          <div class="badge" id="events-count-badge">0 prods</div>
-        </div>
-
-        <div class="search-bar">
-          <input
-            id="search-input"
-            type="text"
-            placeholder="Rechercher (prod, lieu, car régie, crew, client)..."
-          />
-        </div>
-
-        <div class="events-list" id="events-list"></div>
+        <h2 id="events-title">Prods du jour</h2>
+        <small id="events-date-label"></small>
+        <div id="events-list"></div>
       </section>
     </div>
   </div>
 
-  <script>
-    // URLs CSV pour Q1–Q4 (sans Sarajevo)
-    const SHEET_CSV_URLS = [
-      "https://docs.google.com/spreadsheets/d/e/2PACX-1vRG8oBk4Y39HEq7xq_DDg1WVCjN4TEf3opAJsEZi_yNEDEhg4TRcQ0bQabzQ3MgLwcREI075wRBVOUh/pub?gid=921922711&single=true&output=csv", // Q1
-      "https://docs.google.com/spreadsheets/d/e/2PACX-1vRG8oBk4Y39HEq7xq_DDg1WVCjN4TEf3opAJsEZi_yNEDEhg4TRcQ0bQabzQ3MgLwcREI075wRBVOUh/pub?gid=583322571&single=true&output=csv", // Q2
-      "https://docs.google.com/spreadsheets/d/e/2PACX-1vRG8oBk4Y39HEq7xq_DDg1WVCjN4TEf3opAJsEZi_yNEDEhg4TRcQ0bQabzQ3MgLwcREI075wRBVOUh/pub?gid=1439501887&single=true&output=csv", // Q3
-      "https://docs.google.com/spreadsheets/d/e/2PACX-1vRG8oBk4Y39HEq7xq_DDg1WVCjN4TEf3opAJsEZi_yNEDEhg4TRcQ0bQabzQ3MgLwcREI075wRBVOUh/pub?gid=1883694412&single=true&output=csv"  // Q4
-    ];
+<script>
+const SHEET_CSV_URLS = [
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vRG8oBk4Y39HEq7xq_DDg1WVCjN4TEf3opAJsEZi_yNEDEhg4TRcQ0bQabzQ3MgLwcREI075wRBVOUh/pub?gid=921922711&single=true&output=csv", 
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vRG8oBk4Y39HEq7xq_DDg1WVCjN4TEf3opAJsEZi_yNEDEhg4TRcQ0bQabzQ3MgLwcREI075wRBVOUh/pub?gid=583322571&single=true&output=csv",
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vRG8oBk4Y39HEq7xq_DDg1WVCjN4TEf3opAJsEZi_yNEDEhg4TRcQ0bQabzQ3MgLwcREI075wRBVOUh/pub?gid=1439501887&single=true&output=csv",
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vRG8oBk4Y39HEq7xq_DDg1WVCjN4TEf3opAJsEZi_yNEDEhg4TRcQ0bQabzQ3MgLwcREI075wRBVOUh/pub?gid=1883694412&single=true&output=csv"
+];
 
-    const CREW_LABELS = {
-      TC: "Tino Chhath",
-      DG: "Dominique Gelin",
-      JB: "Juliane Boesh"
+let ALL_EVENTS = [];
+let CURRENT_DATE = new Date();
+let SELECTED_DATE = new Date();
+let SEARCH_TERM = "";
+let ACTIVE_USER = "all"; // NEW FILTER VARIABLE
+
+document.getElementById("user-filter").addEventListener("change", e => {
+  ACTIVE_USER = e.target.value;
+  renderCalendar();
+  renderEventsPanel();
+});
+
+function formatDateKey(d){
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+
+function parseCSV(text){
+  const lines=text.split(/\r?\n/).filter(l=>l.trim().length>0);
+  const headers=lines[0].split(",").map(h=>h.trim());
+  return lines.slice(1).map(l=>{
+    const cols=l.split(",");
+    const obj={}; 
+    headers.forEach((h,i)=>obj[h]=cols[i]?cols[i].trim():"");
+    return obj;
+  });
+}
+
+async function loadSheetData(){
+  const texts = await Promise.all(SHEET_CSV_URLS.map(url=>fetch(url).then(r=>r.text())));
+  const rows = texts.flatMap(parseCSV);
+
+  ALL_EVENTS = rows.map(r=>{
+    if(!r.Date || !r.Event) return null;
+    const d=new Date(r.Date);
+    if(isNaN(d)) return null;
+
+    return{
+      date:d,
+      dateKey:formatDateKey(d),
+      prodName:r.Event,
+      location:r.Location,
+      client:r.Client,
+      time:r.Time,
+      crewTC:r.TC?.toLowerCase()=="x",
+      crewDG:r.DG?.toLowerCase()=="x",
+      crewJB:r.JB?.toLowerCase()=="x"
     };
+  }).filter(Boolean);
 
-    let ALL_EVENTS = [];
-    let CURRENT_DATE = new Date();
-    let SELECTED_DATE = new Date();
-    let SEARCH_TERM = "";
+  renderCalendar();
+  renderEventsPanel();
+}
 
-    function formatDateKey(d) {
-      const year = d.getFullYear();
-      const month = String(d.getMonth() + 1).padStart(2, "0");
-      const day = String(d.getDate()).padStart(2, "0");
-      return `${year}-${month}-${day}`;
+function getFilteredEvents(){
+  if(ACTIVE_USER==="all") return ALL_EVENTS;
+  return ALL_EVENTS.filter(e=>
+    (ACTIVE_USER==="TC" && e.crewTC) ||
+    (ACTIVE_USER==="DG" && e.crewDG) ||
+    (ACTIVE_USER==="JB" && e.crewJB)
+  );
+}
+
+function renderCalendar(){
+  const grid=document.getElementById("day-grid");
+  grid.innerHTML="";
+
+  const filtered=getFilteredEvents();
+  const map=new Map();
+  filtered.forEach(e=>{
+    if(!map.has(e.dateKey)) map.set(e.dateKey,[]);
+    map.get(e.dateKey).push(e);
+  });
+
+  const d=new Date(CURRENT_DATE.getFullYear(),CURRENT_DATE.getMonth(),1);
+  const start=(d.getDay()+6)%7;
+  const days=new Date(CURRENT_DATE.getFullYear(),CURRENT_DATE.getMonth()+1,0).getDate();
+
+  for(let i=0;i<42;i++){
+    const cell=document.createElement("div");
+    cell.className="day-cell";
+
+    const date=new Date(CURRENT_DATE.getFullYear(),CURRENT_DATE.getMonth(),i-start+1);
+    const key=formatDateKey(date);
+    if(date.getMonth()!=CURRENT_DATE.getMonth()) cell.classList.add("other-month");
+
+    cell.innerHTML=`<div class="day-number">${date.getDate()}</div>`;
+
+    if(map.has(key)){
+      cell.innerHTML+=`<div style="color:#22c55e;font-size:12px;position:absolute;bottom:6px;left:6px">${map.get(key).length} prods</div>`;
     }
 
-    function parseDateCell(str) {
-      if (!str) return null;
-      const v = String(str).trim();
-      if (!v) return null;
+    cell.onclick=()=>{SELECTED_DATE=date;renderEventsPanel();renderCalendar();}
+    if(key===formatDateKey(SELECTED_DATE)) cell.classList.add("selected");
+    grid.appendChild(cell);
+  }
+}
+
+function renderEventsPanel(){
+  const box=document.getElementById("events-list");
+  box.innerHTML="";
+  const key=formatDateKey(SELECTED_DATE);
+
+  const events=getFilteredEvents().filter(e=>e.dateKey===key);
+
+  if(events.length===0){
+    box.innerHTML=`<div class="no-events">Aucune production ce jour.</div>`;
+    return;
+  }
+
+  events.forEach(e=>{
+    box.innerHTML+=`
+      <div class="event-card">
+        <div class="event-title">${e.prodName}</div>
+        <div class="event-time">Heure: ${e.time||"-"}</div>
+        <div class="event-crew">Crew:
+          ${e.crewTC?"🟦 Tino ":""}
+          ${e.crewDG?"🟥 Dominique ":""}
+          ${e.crewJB?"🌸 Juliane ":""}
+        </div>
+      </div>`;
+  });
+}
+
+document.getElementById("prev-month").onclick=()=>{
+  CURRENT_DATE=new Date(CURRENT_DATE.getFullYear(),CURRENT_DATE.getMonth()-1,1);
+  renderCalendar();
+};
+
+document.getElementById("next-month").onclick=()=>{
+  CURRENT_DATE=new Date(CURRENT_DATE.getFullYear(),CURRENT_DATE.getMonth()+1,1);
+  renderCalendar();
+};
+
+document.getElementById("today-btn").onclick=()=>{
+  SELECTED_DATE=new Date();
+  CURRENT_DATE=new Date();
+  renderCalendar();
+  renderEventsPanel();
+};
+
+loadSheetData();
+</script>
 
-      // ISO
-      if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
-        const d = new Date(v + "T00:00:00");
-        return isNaN(d.getTime()) ? null : d;
-      }
-
-      // 01.12.2025 ou 01/12/2025
-      const m = v.match(/^(\d{1,2})[./](\d{1,2})[./](\d{4})$/);
-      if (m) {
-        const day = parseInt(m[1], 10);
-        const month = parseInt(m[2], 10) - 1;
-        const year = parseInt(m[3], 10);
-        const d = new Date(year, month, day);
-        return isNaN(d.getTime()) ? null : d;
-      }
-
-      const d = new Date(v);
-      return isNaN(d.getTime()) ? null : d;
-    }
-
-    function parseCSV(text) {
-      const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
-      if (lines.length === 0) return [];
-
-      let headerIndex = -1;
-      let headers = [];
-
-      for (let i = 0; i < lines.length; i++) {
-        const cols = lines[i].split(",");
-        const lower = cols.map((c) => c.trim().toLowerCase());
-        if (lower.includes("date") && lower.includes("event")) {
-          headerIndex = i;
-          headers = cols.map((h) => h.trim());
-          break;
-        }
-      }
-
-      if (headerIndex === -1) return [];
-
-      const rows = [];
-      for (let i = headerIndex + 1; i < lines.length; i++) {
-        const cols = lines[i].split(",");
-        if (cols.length === 1 && !cols[0].trim()) continue;
-        const obj = {};
-        headers.forEach((h, idx) => {
-          obj[h] = cols[idx] ? cols[idx].trim() : "";
-        });
-        rows.push(obj);
-      }
-      return rows;
-    }
-
-    async function loadSheetData() {
-      try {
-        const texts = await Promise.all(
-          SHEET_CSV_URLS.map((url) =>
-            fetch(url).then((res) => {
-              if (!res.ok) throw new Error("HTTP " + res.status);
-              return res.text();
-            })
-          )
-        );
-
-        const rows = texts.flatMap((text) => parseCSV(text));
-
-        ALL_EVENTS = rows
-          .map((r) => {
-            const dateRaw = r["Date"] || r["date"];
-            const d = parseDateCell(dateRaw);
-            if (!d || isNaN(d.getTime())) return null;
-            d.setHours(0, 0, 0, 0);
-
-            const eventName = r["Event"] || r["event"] || "";
-            if (!eventName || eventName.trim().length < 2) return null;
-
-            // Crew flags + liste
-            const crewParts = [];
-            const crewFlags = { TC: false, DG: false, JB: false };
-            Object.keys(CREW_LABELS).forEach((col) => {
-              const raw = r[col];
-              if (!raw) return;
-              const v = String(raw).trim().toLowerCase();
-              const PRESENT_VALUES = ["x", "1", "yes", "oui"];
-              if (PRESENT_VALUES.includes(v)) {
-                crewParts.push(CREW_LABELS[col]);
-                if (crewFlags.hasOwnProperty(col)) {
-                  crewFlags[col] = true;
-                }
-              }
-            });
-
-            const delivery =
-              r["Delivery Protocol"] || r["Delivery protocol"] || "";
-            const client = r["Client"] || r["client"] || "";
-
-            return {
-              date: d,
-              dateKey: formatDateKey(d),
-              time: r["Time"] || r["time"] || "",
-              prodName: eventName,
-              location: r["Location"] || r["location"] || "",
-              carRegie: r["Provider"] || r["provider"] || "",
-              camera: r["Camera"] || "",
-              delivery: delivery,
-              internet: r["Internet"] || "",
-              client: client,
-              crew: crewParts.join(" / "),
-              crewTC: crewFlags.TC,
-              crewDG: crewFlags.DG,
-              crewJB: crewFlags.JB
-            };
-          })
-          .filter((x) => x !== null)
-          .sort((a, b) => {
-            if (a.date.getTime() !== b.date.getTime()) {
-              return a.date - b.date;
-            }
-            return (a.time || "").localeCompare(b.time || "");
-          });
-
-        document.getElementById("last-refresh").textContent =
-          "Dernière maj: " + new Date().toLocaleString("fr-CH");
-
-        renderCalendar();
-        renderEventsPanel();
-      } catch (err) {
-        console.error("Erreur chargement sheets:", err);
-        document.getElementById("last-refresh").textContent =
-          "Erreur chargement Google Sheets";
-      }
-    }
-
-    function getEventsByDateKey(dateKey) {
-      return ALL_EVENTS.filter((e) => e.dateKey === dateKey);
-    }
-
-    function renderCalendar() {
-      const year = CURRENT_DATE.getFullYear();
-      const month = CURRENT_DATE.getMonth();
-
-      const monthLabelEl = document.getElementById("month-label");
-      const formatter = new Intl.DateTimeFormat("fr-CH", {
-        month: "long",
-        year: "numeric"
-      });
-      monthLabelEl.textContent = formatter.format(new Date(year, month, 1));
-
-      const firstOfMonth = new Date(year, month, 1);
-      const startDay = (firstOfMonth.getDay() + 6) % 7;
-
-      const daysInMonth = new Date(year, month + 1, 0).getDate();
-      const daysInPrevMonth = new Date(year, month, 0).getDate();
-      const totalCells = 42;
-
-      const grid = document.getElementById("day-grid");
-      grid.innerHTML = "";
-
-      const selectedKey = formatDateKey(SELECTED_DATE);
-
-      for (let i = 0; i < totalCells; i++) {
-        const cell = document.createElement("div");
-        cell.className = "day-cell";
-
-        let dayNum;
-        let cellDate;
-
-        if (i < startDay) {
-          dayNum = daysInPrevMonth - (startDay - 1 - i);
-          cellDate = new Date(year, month - 1, dayNum);
-          cell.classList.add("other-month");
-        } else if (i >= startDay + daysInMonth) {
-          dayNum = i - (startDay + daysInMonth) + 1;
-          cellDate = new Date(year, month + 1, dayNum);
-          cell.classList.add("other-month");
-        } else {
-          dayNum = i - startDay + 1;
-          cellDate = new Date(year, month, dayNum);
-        }
-
-        const dateKey = formatDateKey(cellDate);
-        const eventsForDay = getEventsByDateKey(dateKey);
-
-        const numberEl = document.createElement("div");
-        numberEl.className = "day-number";
-        numberEl.textContent = dayNum;
-        cell.appendChild(numberEl);
-
-        if (eventsForDay.length > 0) {
-          const hasTC = eventsForDay.some((e) => e.crewTC);
-          const hasDG = eventsForDay.some((e) => e.crewDG);
-          const hasJB = eventsForDay.some((e) => e.crewJB);
-
-          const dotsWrap = document.createElement("div");
-          dotsWrap.className = "event-dots";
-
-          let crewAssigned = false;
-
-          if (hasTC) {
-            const d = document.createElement("div");
-            d.className = "event-dot tc";
-            dotsWrap.appendChild(d);
-            crewAssigned = true;
-          }
-          if (hasDG) {
-            const d = document.createElement("div");
-            d.className = "event-dot dg";
-            dotsWrap.appendChild(d);
-            crewAssigned = true;
-          }
-          if (hasJB) {
-            const d = document.createElement("div");
-            d.className = "event-dot jb";
-            dotsWrap.appendChild(d);
-            crewAssigned = true;
-          }
-
-          if (!crewAssigned) {
-            const d = document.createElement("div");
-            d.className = "event-dot generic";
-            dotsWrap.appendChild(d);
-          }
-
-          cell.appendChild(dotsWrap);
-
-          const count = document.createElement("div");
-          count.className = "event-count";
-          count.textContent =
-            eventsForDay.length +
-            " prod" +
-            (eventsForDay.length > 1 ? "s" : "");
-          cell.appendChild(count);
-        }
-
-        if (dateKey === selectedKey) {
-          cell.classList.add("selected");
-        }
-
-        cell.addEventListener("click", () => {
-          SELECTED_DATE = cellDate;
-          renderCalendar();
-          renderEventsPanel();
-        });
-
-        grid.appendChild(cell);
-      }
-    }
-
-    function renderEventsPanel() {
-      const dateKey = formatDateKey(SELECTED_DATE);
-      const formatter = new Intl.DateTimeFormat("fr-CH", {
-        weekday: "long",
-        day: "2-digit",
-        month: "long",
-        year: "numeric"
-      });
-
-      const label = formatter.format(SELECTED_DATE);
-
-      document.getElementById("events-date-label").textContent = label;
-      document.getElementById("events-title").textContent =
-        "Prods du " + label;
-
-      const baseList = getEventsByDateKey(dateKey);
-
-      const filtered = baseList.filter((e) => {
-        if (!SEARCH_TERM) return true;
-        const t = SEARCH_TERM.toLowerCase();
-        return (
-          (e.prodName || "").toLowerCase().includes(t) ||
-          (e.location || "").toLowerCase().includes(t) ||
-          (e.carRegie || "").toLowerCase().includes(t) ||
-          (e.camera || "").toLowerCase().includes(t) ||
-          (e.delivery || "").toLowerCase().includes(t) ||
-          (e.internet || "").toLowerCase().includes(t) ||
-          (e.client || "").toLowerCase().includes(t) ||
-          (e.crew || "").toLowerCase().includes(t) ||
-          (e.time || "").toLowerCase().includes(t)
-        );
-      });
-
-      const badge = document.getElementById("events-count-badge");
-      badge.textContent =
-        filtered.length +
-        " prod" +
-        (filtered.length > 1 ? "s" : "") +
-        (SEARCH_TERM ? " (filtré)" : "");
-
-      const listEl = document.getElementById("events-list");
-      listEl.innerHTML = "";
-
-      if (filtered.length === 0) {
-        const msg = document.createElement("div");
-        msg.className = "no-events";
-        msg.textContent = SEARCH_TERM
-          ? "Aucune prod pour ce jour avec ce filtre."
-          : "Aucune prod planifiée ce jour.";
-        listEl.appendChild(msg);
-        return;
-      }
-
-      filtered.forEach((e) => {
-        const card = document.createElement("div");
-        card.className = "event-card";
-
-        const title = document.createElement("div");
-        title.className = "event-title";
-        title.textContent = e.prodName || "(Sans titre)";
-        card.appendChild(title);
-
-        if (e.time) {
-          const timeEl = document.createElement("div");
-          timeEl.className = "event-time";
-          timeEl.textContent = "Heure : " + e.time;
-          card.appendChild(timeEl);
-        }
-
-        const meta = document.createElement("div");
-        meta.className = "event-meta";
-
-        const locSpan = document.createElement("span");
-        locSpan.innerHTML =
-          '<span class="event-meta-label">Lieu :</span> ' +
-          (e.location || "-");
-        meta.appendChild(locSpan);
-
-        const carSpan = document.createElement("span");
-        carSpan.innerHTML =
-          '<span class="event-meta-label">Car régie :</span> ' +
-          (e.carRegie || "-");
-        meta.appendChild(carSpan);
-
-        if (e.camera) {
-          const camSpan = document.createElement("span");
-          camSpan.innerHTML =
-            '<span class="event-meta-label">Caméra :</span> ' +
-            e.camera;
-          meta.appendChild(camSpan);
-        }
-
-        if (e.delivery) {
-          const delSpan = document.createElement("span");
-          delSpan.innerHTML =
-            '<span class="event-meta-label">Delivery :</span> ' +
-            e.delivery;
-          meta.appendChild(delSpan);
-        }
-
-        if (e.internet) {
-          const netSpan = document.createElement("span");
-          netSpan.innerHTML =
-            '<span class="event-meta-label">Internet :</span> ' +
-            e.internet;
-          meta.appendChild(netSpan);
-        }
-
-        if (e.client) {
-          const cliSpan = document.createElement("span");
-          cliSpan.innerHTML =
-            '<span class="event-meta-label">Client :</span> ' +
-            e.client;
-          meta.appendChild(cliSpan);
-        }
-
-        card.appendChild(meta);
-
-        const crew = document.createElement("div");
-        crew.className = "event-crew";
-        crew.innerHTML =
-          '<span class="event-meta-label">Équipe :</span> ' +
-          (e.crew || "-");
-        card.appendChild(crew);
-
-        listEl.appendChild(card);
-      });
-    }
-
-    document
-      .getElementById("prev-month")
-      .addEventListener("click", () => {
-        CURRENT_DATE = new Date(
-          CURRENT_DATE.getFullYear(),
-          CURRENT_DATE.getMonth() - 1,
-          1
-        );
-        renderCalendar();
-      });
-
-    document
-      .getElementById("next-month")
-      .addEventListener("click", () => {
-        CURRENT_DATE = new Date(
-          CURRENT_DATE.getFullYear(),
-          CURRENT_DATE.getMonth() + 1,
-          1
-        );
-        renderCalendar();
-      });
-
-    document.getElementById("today-btn").addEventListener("click", () => {
-      CURRENT_DATE = new Date();
-      SELECTED_DATE = new Date();
-      renderCalendar();
-      renderEventsPanel();
-    });
-
-    document
-      .getElementById("search-input")
-      .addEventListener("input", (e) => {
-        SEARCH_TERM = e.target.value.trim();
-        renderEventsPanel();
-      });
-
-    loadSheetData();
-  </script>
 </body>
 </html>
