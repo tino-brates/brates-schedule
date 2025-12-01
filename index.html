@@ -238,32 +238,54 @@ function getEventsByDate(d){
   });
 }
 
-async function load(){
-  const texts=await Promise.all(URLS.map(u=>fetch(u).then(r=>r.text())));
-  const rows=texts.flatMap(t=>t.split(/\r?\n/)).filter(l=>l.includes(","));
+async function load() {
+  const texts = await Promise.all(URLS.map(u => fetch(u).then(r => r.text())));
 
-  ALL_EVENTS=rows.slice(1).map(line=>{
-    const c=line.split(",");
-    let crewList=[];
-    let flags={TC:false,DG:false,JB:false};
+  ALL_EVENTS = [];
 
-    ["TC","DG","JB"].forEach((k,i)=>{
-      if(["x","1","oui","yes"].includes(c[7+i]?.toLowerCase?.())){flags[k]=true;crewList.push(k);}
+  texts.forEach(text => {
+    const rows = text.split(/\r?\n/).map(l => l.split(","));
+    const header = rows[0];
+
+    rows.slice(1).forEach(cols => {
+      if (!cols[0] || cols[0].trim() === "") return;
+
+      const date = new Date(cols[0]);
+      const dateKey = cols[0].trim();
+
+      const crewFlags = {
+        TC: ["x","1","oui","yes"].includes((cols[9] || "").toLowerCase()),
+        DG: ["x","1","oui","yes"].includes((cols[10] || "").toLowerCase()),
+        JB: ["x","1","oui","yes"].includes((cols[11] || "").toLowerCase())
+      };
+
+      ALL_EVENTS.push({
+        date,
+        dateKey,
+        name: cols[2] || "",
+        time: cols[1] || "",
+        location: cols[3] || "",
+        provider: cols[4] || "",
+        camera: cols[5] || "",
+        delivery: cols[6] || "",
+        internet: cols[7] || "",
+        client: cols[8] || "",
+        ...crewFlags,
+        crewList: [
+          crewFlags.TC ? "Tino" : null,
+          crewFlags.DG ? "Dominique" : null,
+          crewFlags.JB ? "Juliane" : null,
+        ].filter(Boolean).join(" / ")
+      });
     });
-
-    return{
-      date:new Date(c[0]),
-      dateKey:c[0],
-      name:c[1],
-      location:c[2],
-      crewList:crewList.join(", "),
-      ...flags
-    };
   });
 
-  document.getElementById("last-refresh").textContent="Maj: "+new Date().toLocaleString("fr-CH");
+  document.getElementById("last-refresh").textContent =
+    "Maj: " + new Date().toLocaleString("fr-CH");
+
   render();
 }
+
 
 function render(){
   renderCalendar();
