@@ -268,8 +268,14 @@
   </div>
 
   <script>
-    const SHEET_CSV_URL =
-      "https://docs.google.com/spreadsheets/d/e/2PACX-1vRG8oBk4Y39HEq7xq_DDg1WVCjN4TEf3opAJsEZi_yNEDEhg4TRcQ0bQabzQ3MgLwcREI075wRBVOUh/pub?output=csv";
+    // Une URL CSV par trimestre (feuilles sans Sarajevo)
+const SHEET_CSV_URLS = [
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vRG8oBk4Y39HEq7xq_DDg1WVCjN4TEf3opAJsEZi_yNEDEhg4TRcQ0bQabzQ3MgLwcREI075wRBVOUh/pub?gid=921922711&single=true&output=csv", // Q1
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vRG8oBk4Y39HEq7xq_DDg1WVCjN4TEf3opAJsEZi_yNEDEhg4TRcQ0bQabzQ3MgLwcREI075wRBVOUh/pub?gid=583322571&single=true&output=csv", // Q2
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vRG8oBk4Y39HEq7xq_DDg1WVCjN4TEf3opAJsEZi_yNEDEhg4TRcQ0bQabzQ3MgLwcREI075wRBVOUh/pub?gid=1439501887&single=true&output=csv", // Q3
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vRG8oBk4Y39HEq7xq_DDg1WVCjN4TEf3opAJsEZi_yNEDEhg4TRcQ0bQabzQ3MgLwcREI075wRBVOUh/pub?gid=1883694412&single=true&output=csv"  // Q4
+];
+
 
     const CREW_LABELS = {
       TC: "Tino Chhath",
@@ -363,71 +369,80 @@ function isSarajevoRow(r) {
 
 
 
-    async function loadSheetData() {
-      try {
-        const res = await fetch(SHEET_CSV_URL);
-        const text = await res.text();
-        const rows = parseCSV(text);
+   async function loadSheetData() {
+  try {
+    // charge toutes les feuilles en parallèle
+    const texts = await Promise.all(
+      SHEET_CSV_URLS.map((url) =>
+        fetch(url).then((res) => {
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          return res.text();
+        })
+      )
+    );
 
-        ALL_EVENTS = rows
-          .map((r) => {
-            if (isSarajevoRow(r)) return null;
+    // parse chaque CSV et concatène
+    const rows = texts.flatMap((text) => parseCSV(text));
 
-            const dateRaw = r["Date"] || r["date"];
-            const d = parseDateCell(dateRaw);
+    ALL_EVENTS = rows
+      .map((r) => {
+        // sécurité : si un jour Sarajevo se glisse dans un Qx
+        if (typeof isSarajevoRow === "function" && isSarajevoRow(r)) return null;
 
-// ❌ Ignore toute ligne sans date valide ou vide
-if (!d || isNaN(d.getTime())) return null;
+        const dateRaw = r["Date"] || r["date"];
+        const d = parseDateCell(dateRaw);
+        if (!d || isNaN(d.getTime())) return null;
 
-// ❌ Ignore lignes sans nom d'event
-const eventName = r["Event"] || r["event"] || "";
-if (!eventName || eventName.trim().length < 2) return null;
+        d.setHours(0, 0, 0, 0); // évite les décalages de fuseau
 
+        const eventName = r["Event"] || r["event"] || "";
+        if (!eventName || eventName.trim().length < 2) return null;
 
-            const crewParts = [];
-            Object.keys(CREW_LABELS).forEach((col) => {
-              if (r[col] && String(r[col]).trim() !== "") {
-                crewParts.push(CREW_LABELS[col]);
-              }
-            });
+        const crewParts = [];
+        Object.keys(CREW_LABELS).forEach((col) => {
+          if (r[col] && String(r[col]).trim() !== "") {
+            crewParts.push(CREW_LABELS[col]);
+          }
+        });
 
-            const delivery =
-              r["Delivery Protocol"] || r["Delivery protocol"] || "";
-            const client = r["Client"] || r["client"] || "";
+        const delivery =
+          r["Delivery Protocol"] || r["Delivery protocol"] || "";
+        const client = r["Client"] || r["client"] || "";
 
-            return {
-              date: d,
-              dateKey: formatDateKey(d),
-              time: r["Time"] || r["time"] || "",
-              prodName: r["Event"] || r["event"] || "",
-              location: r["Location"] || r["location"] || "",
-              carRegie: r["Provider"] || r["provider"] || "",
-              camera: r["Camera"] || "",
-              delivery: delivery,
-              internet: r["Internet"] || "",
-              client: client,
-              crew: crewParts.join(" / "),
-            };
-          })
-          .filter((x) => x !== null)
-          .sort((a, b) => {
-            if (a.date.getTime() !== b.date.getTime()) {
-              return a.date - b.date;
-            }
-            return (a.time || "").localeCompare(b.time || "");
-          });
+        return {
+          date: d,
+          dateKey: formatDateKey(d),
+          time: r["Time"] || r["time"] || "",
+          prodName: eventName,
+          location: r["Location"] || r["location"] || "",
+          carRegie: r["Provider"] || r["provider"] || "",
+          camera: r["Camera"] || "",
+          delivery: delivery,
+          internet: r["Internet"] || "",
+          client: client,
+          crew: crewParts.join(" / "),
+        };
+      })
+      .filter((x) => x !== null)
+      .sort((a, b) => {
+        if (a.date.getTime() !== b.date.getTime()) {
+          return a.date - b.date;
+        }
+        return (a.time || "").localeCompare(b.time || "");
+      });
 
-        document.getElementById("last-refresh").textContent =
-          "Dernière maj: " + new Date().toLocaleString("fr-CH");
+    document.getElementById("last-refresh").textContent =
+      "Dernière maj: " + new Date().toLocaleString("fr-CH");
 
-        renderCalendar();
-        renderEventsPanel();
-      } catch (err) {
-        console.error("Erreur chargement sheet:", err);
-        document.getElementById("last-refresh").textContent =
-          "Erreur chargement Google Sheet";
-      }
-    }
+    renderCalendar();
+    renderEventsPanel();
+  } catch (err) {
+    console.error("Erreur chargement sheets:", err);
+    document.getElementById("last-refresh").textContent =
+      "Erreur chargement Google Sheets";
+  }
+}
+
 
     function getEventsByDateKey(dateKey) {
       return ALL_EVENTS.filter((e) => e.dateKey === dateKey);
