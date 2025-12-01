@@ -6,3 +6,4 @@
     "googleapis": "^129.0.0"
   }
 }
+"type": "module",
