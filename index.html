@@ -252,7 +252,26 @@
     .event-crew {
       font-size: 0.8rem;
       margin-top: 4px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
     }
+    .crew-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-left: 4px;
+    }
+    .crew-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+    }
+    .crew-dot.tc { background: #3b82f6; }
+    .crew-dot.dg { background: #ef4444; }
+    .crew-dot.jb { background: #ec4899; }
+
     .no-events {
       font-size: 0.85rem;
       color: #9ca3af;
@@ -611,7 +630,8 @@
           cell.appendChild(count);
         }
 
-        if (dateKey === selectedKey) {
+        const cellDateKey = formatDateKey(cellDate);
+        if (cellDateKey === selectedKey) {
           cell.classList.add("selected");
         }
 
@@ -745,9 +765,45 @@
 
         const crew = document.createElement("div");
         crew.className = "event-crew";
-        crew.innerHTML =
-          '<span class="event-meta-label">Équipe :</span> ' +
-          (e.crew || "-");
+
+        const crewLabelSpan = document.createElement("span");
+        crewLabelSpan.className = "event-meta-label";
+        crewLabelSpan.textContent = "Équipe :";
+        crew.appendChild(crewLabelSpan);
+
+        let hasCrew = false;
+
+        function addCrewChip(cssClass, name) {
+          const chip = document.createElement("span");
+          chip.className = "crew-chip";
+          const dot = document.createElement("span");
+          dot.className = "crew-dot " + cssClass;
+          chip.appendChild(dot);
+          const txt = document.createElement("span");
+          txt.textContent = name;
+          chip.appendChild(txt);
+          crew.appendChild(chip);
+        }
+
+        if (e.crewTC) {
+          addCrewChip("tc", "Tino");
+          hasCrew = true;
+        }
+        if (e.crewDG) {
+          addCrewChip("dg", "Dominique");
+          hasCrew = true;
+        }
+        if (e.crewJB) {
+          addCrewChip("jb", "Juliane");
+          hasCrew = true;
+        }
+
+        if (!hasCrew) {
+          const dash = document.createElement("span");
+          dash.textContent = " -";
+          crew.appendChild(dash);
+        }
+
         card.appendChild(crew);
 
         listEl.appendChild(card);
