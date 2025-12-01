@@ -29,9 +29,26 @@
       justify-content: space-between;
       align-items: center;
       margin-bottom: 16px;
+      gap: 12px;
     }
     header h1 { font-size: 1.5rem; font-weight: 700; }
     .subtitle { font-size: 0.9rem; color: #9ca3af; }
+
+    .header-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 6px;
+    }
+
+    .crew-filter {
+      background:#020617;
+      color:#e5e7eb;
+      border-radius:999px;
+      border:1px solid #1f2937;
+      padding:4px 10px;
+      font-size:0.8rem;
+    }
 
     .layout {
       display: grid;
@@ -218,6 +235,54 @@
       color: #9ca3af;
       margin-top: 12px;
     }
+
+    .add-btn {
+      background:#16a34a;
+      color:#fff;
+      border:none;
+      border-radius:999px;
+      padding:6px 12px;
+      font-size:0.8rem;
+      cursor:pointer;
+    }
+    .add-btn:hover {
+      background:#15803d;
+    }
+    #add-form {
+      display:none;
+      padding:10px;
+      background:#111827;
+      border-radius:10px;
+      margin-top:8px;
+      font-size:0.8rem;
+    }
+    #add-form label {
+      display:block;
+      margin-top:6px;
+      margin-bottom:2px;
+    }
+    #add-form input[type="text"],
+    #add-form input[type="date"],
+    #add-form input[type="time"] {
+      width:100%;
+      background:#020617;
+      border:1px solid #1f2937;
+      border-radius:6px;
+      padding:4px 6px;
+      color:#e5e7eb;
+      font-size:0.8rem;
+    }
+    #add-form .crew-checkboxes {
+      display:flex;
+      gap:12px;
+      margin-top:8px;
+      margin-bottom:8px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+    #add-form button {
+      margin-top:6px;
+    }
   </style>
 </head>
 <body>
@@ -228,20 +293,17 @@
         <div class="subtitle">
           Données depuis Google Sheets · Prods, cars régie & équipes
         </div>
-
-        <!-- 🔹 Sélecteur de personne (AJOUT) -->
-        <div style="margin-top:8px; display:flex; align-items:center; gap:8px;">
-          <span style="font-size:0.8rem; color:#9ca3af;">Vue calendrier :</span>
-          <select id="crew-filter" style="background:#111827; color:#e5e7eb; border:1px solid #1f2937; border-radius:999px; padding:4px 10px; font-size:0.8rem;">
-            <option value="all">Toute l’équipe</option>
-            <option value="TC">Tino</option>
-            <option value="DG">Dominique</option>
-            <option value="JB">Juliane</option>
-          </select>
-        </div>
       </div>
-      <div class="badge" id="last-refresh">
-        Dernière maj: –
+      <div class="header-right">
+        <div class="badge" id="last-refresh">
+          Dernière maj: –
+        </div>
+        <select id="crew-filter" class="crew-filter">
+          <option value="ALL">Tous les crew</option>
+          <option value="TC">Tino</option>
+          <option value="DG">Dominique</option>
+          <option value="JB">Juliane</option>
+        </select>
       </div>
     </header>
 
@@ -273,7 +335,47 @@
             <h2 id="events-title">Prods du jour</h2>
             <small id="events-date-label"></small>
           </div>
-          <div class="badge" id="events-count-badge">0 prods</div>
+          <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;">
+            <div class="badge" id="events-count-badge">0 prods</div>
+            <button id="openForm" class="add-btn">➕ Ajouter une production</button>
+          </div>
+        </div>
+
+        <div id="add-form">
+          <label for="f_date">Date</label>
+          <input id="f_date" type="date" />
+
+          <label for="f_time">Heure</label>
+          <input id="f_time" type="time" />
+
+          <label for="f_event">Nom de la prod / event</label>
+          <input id="f_event" type="text" />
+
+          <label for="f_location">Lieu</label>
+          <input id="f_location" type="text" />
+
+          <label for="f_provider">Car régie / Provider</label>
+          <input id="f_provider" type="text" />
+
+          <label for="f_camera">Setup caméra</label>
+          <input id="f_camera" type="text" />
+
+          <label for="f_delivery">Delivery protocol (SRT, RTMP…)</label>
+          <input id="f_delivery" type="text" />
+
+          <label for="f_internet">Internet (source)</label>
+          <input id="f_internet" type="text" />
+
+          <label for="f_client">Client</label>
+          <input id="f_client" type="text" />
+
+          <div class="crew-checkboxes">
+            <label><input type="checkbox" id="f_tc" /> TC</label>
+            <label><input type="checkbox" id="f_dg" /> DG</label>
+            <label><input type="checkbox" id="f_jb" /> JB</label>
+          </div>
+
+          <button id="submitEvent" class="add-btn">✔ Enregistrer la production</button>
         </div>
 
         <div class="search-bar">
@@ -308,8 +410,7 @@
     let CURRENT_DATE = new Date();
     let SELECTED_DATE = new Date();
     let SEARCH_TERM = "";
-    // 🔹 Filtre actif (all, TC, DG, JB)
-    let ACTIVE_CREW_FILTER = "all";
+    let CURRENT_CREW_FILTER = "ALL";
 
     function formatDateKey(d) {
       const year = d.getFullYear();
@@ -455,17 +556,18 @@
       }
     }
 
-    // 🔹 getEventsByDateKey modifié pour prendre en compte ACTIVE_CREW_FILTER
+    function matchesCrewFilter(e) {
+      if (CURRENT_CREW_FILTER === "ALL") return true;
+      if (CURRENT_CREW_FILTER === "TC") return !!e.crewTC;
+      if (CURRENT_CREW_FILTER === "DG") return !!e.crewDG;
+      if (CURRENT_CREW_FILTER === "JB") return !!e.crewJB;
+      return true;
+    }
+
     function getEventsByDateKey(dateKey) {
-      return ALL_EVENTS.filter((e) => {
-        if (e.dateKey !== dateKey) return false;
-
-        if (ACTIVE_CREW_FILTER === "TC" && !e.crewTC) return false;
-        if (ACTIVE_CREW_FILTER === "DG" && !e.crewDG) return false;
-        if (ACTIVE_CREW_FILTER === "JB" && !e.crewJB) return false;
-
-        return true;
-      });
+      return ALL_EVENTS.filter(
+        (e) => e.dateKey === dateKey && matchesCrewFilter(e)
+      );
     }
 
     function renderCalendar() {
@@ -744,11 +846,63 @@
         renderEventsPanel();
       });
 
-    // 🔹 Listener sur le select crew
-    document.getElementById("crew-filter").addEventListener("change", (e) => {
-      ACTIVE_CREW_FILTER = e.target.value;
-      renderCalendar();
-      renderEventsPanel();
+    document
+      .getElementById("crew-filter")
+      .addEventListener("change", (e) => {
+        CURRENT_CREW_FILTER = e.target.value;
+        renderCalendar();
+        renderEventsPanel();
+      });
+
+    document.getElementById("openForm").addEventListener("click", () => {
+      const box = document.getElementById("add-form");
+      box.style.display = box.style.display === "none" || box.style.display === ""
+        ? "block"
+        : "none";
+    });
+
+    document.getElementById("submitEvent").addEventListener("click", async () => {
+      const payload = {
+        date: document.getElementById("f_date").value,
+        time: document.getElementById("f_time").value,
+        event: document.getElementById("f_event").value,
+        location: document.getElementById("f_location").value,
+        provider: document.getElementById("f_provider").value,
+        camera: document.getElementById("f_camera").value,
+        delivery: document.getElementById("f_delivery").value,
+        internet: document.getElementById("f_internet").value,
+        client: document.getElementById("f_client").value,
+        tc: document.getElementById("f_tc").checked,
+        dg: document.getElementById("f_dg").checked,
+        jb: document.getElementById("f_jb").checked
+      };
+
+      if (!payload.date || !payload.event) {
+        alert("Minimum nécessaire : Date + Nom de la prod");
+        return;
+      }
+
+      try {
+        const res = await fetch("/api/add-event", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+          alert("Production ajoutée !");
+          document.getElementById("add-form").style.display = "none";
+          // recharge les datas (le CSV sera à jour au prochain export/pull)
+          loadSheetData();
+        } else {
+          const err = await res.json().catch(() => ({}));
+          console.error("Erreur API", err);
+          alert("Erreur lors de l’ajout (API).");
+        }
+      } catch (e) {
+        console.error(e);
+        alert("Erreur réseau lors de l’ajout.");
+      }
     });
 
     loadSheetData();
