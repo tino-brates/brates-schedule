@@ -1,0 +1,8 @@
+{
+  "name": "brates-schedule",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "googleapis": "^129.0.0"
+  }
+}
