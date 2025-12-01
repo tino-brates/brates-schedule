@@ -2,268 +2,394 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <title>Brates — Production Scheduler</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-
+  <title>Calendrier de production - Brates</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    *{margin:0;padding:0;box-sizing:border-box;}
-    body{
-      background:#0f172a;
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0f172a;
+      color: #e5e7eb;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 24px;
+    }
+    .app {
+      width: 100%;
+      max-width: 1200px;
+      background: #020617;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+      border: 1px solid rgba(148,163,184,0.3);
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px; /* reduced spacing to fit filter */
+    }
+    header h1 { font-size: 1.5rem; font-weight: 700; }
+    .subtitle { font-size: 0.9rem; color: #9ca3af; }
+
+    /* 🔥 STYLE DU SELECTEUR CREW */
+    #crewFilter {
+      padding:6px 10px;
+      border-radius:8px;
+      background:#111827;
+      border:1px solid #1f2937;
       color:white;
-      font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-      display:flex;justify-content:center;
-      padding:20px;
+      cursor:pointer;
+      margin-bottom:12px;
     }
 
-    .app{
-      width:100%;max-width:1200px;
-      padding:20px;border-radius:16px;
-      background:#020617;border:1px solid #1e293b;
-      box-shadow:0 20px 40px rgba(0,0,0,.5);
+    /* --- RESTE DE TON CSS IDENTIQUE --- */
+    .layout {
+      display: grid;
+      grid-template-columns: 1.1fr 1.6fr;
+      gap: 20px;
+      margin-top: 16px;
+    }
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
     }
 
-    header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
-    .subtitle{color:#94a3b8;font-size:.9rem;}
+    .calendar {
+      background: #020617;
+      border-radius: 12px;
+      border: 1px solid rgba(148,163,184,0.3);
+      padding: 16px;
+    }
+    .cal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .month-label { font-weight: 600; }
+    .cal-nav button {
+      background: #111827;
+      color: #e5e7eb;
+      border: 1px solid #1f2937;
+      padding: 4px 10px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-size: 0.8rem;
+    }
+    .cal-nav button:hover { background: #1f2937; }
 
-    select{
-      padding:6px 12px;border-radius:8px;border:1px solid #1e293b;
-      background:#111827;color:white;cursor:pointer;
+    .weekday-row, .day-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+    }
+    .weekday {
+      text-align: center;
+      font-size: 0.75rem;
+      color: #9ca3af;
+      padding: 4px 0;
+    }
+    .day-cell {
+      position: relative;
+      min-height: 60px;
+      padding: 4px;
+      border-radius: 10px;
+      text-align: right;
+      font-size: 0.8rem;
+      cursor: pointer;
+      border: 1px solid transparent;
+    }
+    .day-cell.other-month { opacity: 0.25; }
+    .day-cell:hover {
+      border-color: #1d4ed8;
+      background: #020617;
+    }
+    .day-cell.selected {
+      border-color: #3b82f6;
+      background: radial-gradient(circle at top left, rgba(59,130,246,0.55), #020617);
+    }
+    .day-number { font-weight: 600; }
+
+    .event-dots {
+      position: absolute;
+      left: 6px;
+      bottom: 6px;
+      display: flex;
+      gap: 4px;
+    }
+    .event-dot { width: 8px; height: 8px; border-radius: 999px; }
+
+    .event-dot.tc { background: #3b82f6; } /* bleu */
+    .event-dot.dg { background: #ef4444; } /* rouge */
+    .event-dot.jb { background: #ec4899; } /* rose */
+    .event-dot.generic { background: #22c55e; }
+
+    .event-count {
+      position: absolute;
+      left: 6px;
+      bottom: 20px;
+      font-size: 0.7rem;
+      color: #9ca3af;
+      font-weight: 400;
     }
 
-    .filter-row{
-      margin-top:10px;margin-bottom:20px;
-      display:flex;align-items:center;gap:10px;
+    .events-panel {
+      background: #020617;
+      border-radius: 12px;
+      border: 1px solid rgba(148,163,184,0.3);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
     }
-
-    .layout{
-      display:grid;grid-template-columns:1.1fr 1.6fr;gap:20px;
+    .events-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
     }
+    .events-header h2 { font-size: 1.1rem; font-weight: 600; }
 
-    @media(max-width:900px){
-      .layout{grid-template-columns:1fr;}
+    .search-bar input {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 999px;
+      background:#020617;
+      border:1px solid #1f2937;
+      color:white;
     }
-
-    .calendar, .events-panel{
-      border:1px solid #1e293b;
-      border-radius:12px;padding:16px;
-      background:#0b1221;
-    }
-
-    .month-label{font-weight:700;font-size:1.2rem;margin-bottom:10px;}
-
-    .weekday-row,.day-grid{
-      display:grid;grid-template-columns:repeat(7,1fr);gap:4px;
-    }
-
-    .weekday{font-size:.75rem;color:#94a3b8;text-align:center;padding:4px;}
-
-    .day-cell{
-      min-height:60px;border-radius:10px;padding:6px;
-      cursor:pointer;position:relative;font-size:.8rem;text-align:right;
-      border:1px solid transparent;
-    }
-
-    .day-cell:hover{border-color:#1d4ed8;}
-
-    .day-cell.selected{
-      border-color:#3b82f6;
-      background:radial-gradient(circle at top left,rgba(59,130,246,.4),#0b1221);
-    }
-
-    .day-number{font-weight:600;}
-
-    .event-dots{position:absolute;left:6px;bottom:6px;display:flex;gap:4px;}
-    .event-dot{width:8px;height:8px;border-radius:100%;}
-    .tc{background:#3b82f6;}
-    .dg{background:#ef4444;}
-    .jb{background:#ec4899;}
-    .generic{background:#22c55e;}
-
-    .event-count{
-      position:absolute;left:6px;bottom:20px;font-size:.7rem;color:#94a3b8;
-    }
-
-    .event-card{
-      background:#102038;padding:10px;border-radius:8px;border:1px solid #1e293b;margin-bottom:8px;
-    }
-    .event-card strong{color:#38bdf8;}
   </style>
 </head>
-
 <body>
-<div class="app">
+  <div class="app">
+    <header>
+      <div>
+        <h1>Calendrier de production – Brates</h1>
+        <div class="subtitle">Données depuis Google Sheets · Prods, cars régie & équipes</div>
+      </div>
+      <div class="badge" id="last-refresh">Dernière maj: –</div>
+    </header>
 
-<header>
-  <div>
-    <h1>Calendrier Prod — Brates</h1>
-    <div class="subtitle">Sync Google Sheets · Car régie · Crew assigné</div>
-  </div>
-  <div id="last-refresh" style="font-size:.8rem;color:#94a3b8;">–</div>
-</header>
+    <!-- 🔥 AJOUT FILTRE CREW -->
+    <select id="crewFilter">
+      <option value="all">Toutes les productions</option>
+      <option value="TC">Tino</option>
+      <option value="DG">Dominique</option>
+      <option value="JB">Juliane</option>
+    </select>
 
-<div class="filter-row">
-  <label>Afficher pour :</label>
-  <select id="crew-filter">
-    <option value="all">Tous</option>
-    <option value="TC">Tino</option>
-    <option value="DG">Dominique</option>
-    <option value="JB">Juliane</option>
-  </select>
-</div>
+    <div class="layout">
+      <section class="calendar">
+        <div class="cal-header">
+          <div class="month-label" id="month-label"></div>
+          <div class="cal-nav">
+            <button id="prev-month">&lt; Mois préc.</button>
+            <button id="today-btn">Aujourd’hui</button>
+            <button id="next-month">Mois suiv. &gt;</button>
+          </div>
+        </div>
 
-<div class="layout">
-  <section class="calendar">
-    <div class="month-label" id="month-label"></div>
-    <div class="weekday-row">
-      <div>Lun</div><div>Mar</div><div>Mer</div><div>Jeu</div><div>Ven</div><div>Sam</div><div>Dim</div>
+        <div class="weekday-row">
+          <div class="weekday">Lun</div><div class="weekday">Mar</div><div class="weekday">Mer</div>
+          <div class="weekday">Jeu</div><div class="weekday">Ven</div><div class="weekday">Sam</div><div class="weekday">Dim</div>
+        </div>
+        <div id="day-grid" class="day-grid"></div>
+      </section>
+
+      <section class="events-panel">
+        <div class="events-header">
+          <div>
+            <h2 id="events-title">Prods du jour</h2>
+            <small id="events-date-label"></small>
+          </div>
+          <div class="badge" id="events-count-badge">0 prods</div>
+        </div>
+
+        <div class="search-bar">
+          <input id="search-input" type="text" placeholder="Rechercher (prod, lieu, car régie, crew, client)..." />
+        </div>
+
+        <div id="events-list" class="events-list"></div>
+      </section>
     </div>
-    <div id="day-grid" class="day-grid"></div>
-  </section>
-
-  <section class="events-panel">
-    <h2 id="events-title">Prods du jour</h2>
-    <small id="events-date-label"></small>
-    <div id="events-list" style="margin-top:10px;"></div>
-  </section>
-</div>
-
-</div>
+  </div>
 
 <script>
-let FILTER="all";
-let ALL_EVENTS=[];
-let CURRENT=new Date();
-let SELECTED=new Date();
-
-const URLS=[
+const SHEET_CSV_URLS = [
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vRG8oBk4Y39HEq7xq_DDg1WVCjN4TEf3opAJsEZi_yNEDEhg4TRcQ0bQabzQ3MgLwcREI075wRBVOUh/pub?gid=921922711&single=true&output=csv",
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vRG8oBk4Y39HEq7xq_DDg1WVCjN4TEf3opAJsEZi_yNEDEhg4TRcQ0bQabzQ3MgLwcREI075wRBVOUh/pub?gid=583322571&single=true&output=csv",
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vRG8oBk4Y39HEq7xq_DDg1WVCjN4TEf3opAJsEZi_yNEDEhg4TRcQ0bQabzQ3MgLwcREI075wRBVOUh/pub?gid=1439501887&single=true&output=csv",
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vRG8oBk4Y39HEq7xq_DDg1WVCjN4TEf3opAJsEZi_yNEDEhg4TRcQ0bQabzQ3MgLwcREI075wRBVOUh/pub?gid=1883694412&single=true&output=csv"
 ];
 
-function key(d){
-  return d.toISOString().split("T")[0];
+let ACTIVE_CREW_FILTER = "all"; // 🔥
+
+let ALL_EVENTS = [];
+let CURRENT_DATE = new Date();
+let SELECTED_DATE = new Date();
+let SEARCH_TERM = "";
+
+function formatDateKey(d){
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 }
 
-async function load(){
-  ALL_EVENTS=[];
+async function loadSheetData(){
+  const texts = await Promise.all(SHEET_CSV_URLS.map(url => fetch(url).then(r=>r.text())));
+  const rows = texts.flatMap(t=>t.split("\n").slice(1).map(l=>l.split(",")));
+  
+  ALL_EVENTS = rows.map(cols=>{
+    if(!cols[0]) return null;
+    
+    const date = new Date(cols[0]);
+    return {
+      date,
+      dateKey:cols[0],
+      time:cols[1],
+      prodName:cols[2],
+      location:cols[3],
+      carRegie:cols[4],
+      camera:cols[5],
+      delivery:cols[6],
+      internet:cols[7],
+      client:cols[8],
+      crewTC:cols[9]?.trim().toLowerCase()==="x",
+      crewDG:cols[10]?.trim().toLowerCase()==="x",
+      crewJB:cols[11]?.trim().toLowerCase()==="x",
+      crew:[
+        cols[9]?.trim().toLowerCase()==="x" ? "Tino" : null,
+        cols[10]?.trim().toLowerCase()==="x" ? "Dominique" : null,
+        cols[11]?.trim().toLowerCase()==="x" ? "Juliane" : null
+      ].filter(Boolean).join(" / ")
+    };
+  }).filter(Boolean);
 
-  const csvArr=await Promise.all(URLS.map(u=>fetch(u).then(r=>r.text())));
-
-  csvArr.forEach(text=>{
-    const lines=text.split(/\r?\n/).map(l=>l.split(","));
-    lines.slice(1).forEach(cols=>{
-      if(!cols[0] || !cols[2]) return;
-
-      const date=new Date(cols[0]);
-      const flags={
-        TC:["x","1","oui","yes"].includes((cols[9]||"").toLowerCase()),
-        DG:["x","1","oui","yes"].includes((cols[10]||"").toLowerCase()),
-        JB:["x","1","oui","yes"].includes((cols[11]||"").toLowerCase()),
-      };
-
-      ALL_EVENTS.push({
-        dateKey:cols[0],
-        date,
-        name:cols[2],
-        location:cols[3],
-        client:cols[8],
-        ...flags,
-        crew:[
-          flags.TC?"Tino":null,
-          flags.DG?"Dominique":null,
-          flags.JB?"Juliane":null
-        ].filter(Boolean).join(" / ")
-      });
-    });
-  });
-
-  document.getElementById("last-refresh").innerText="Maj : "+new Date().toLocaleString("fr-CH");
-
-  render();
-}
-
-function render(){
   renderCalendar();
-  renderEvents();
+  renderEventsPanel();
 }
 
-function filteredEventsByDate(dateKey){
+function getEventsByDateKey(dateKey){
   return ALL_EVENTS.filter(e=>{
-    if(e.dateKey!==dateKey) return false;
-    if(FILTER==="TC"&&!e.TC) return false;
-    if(FILTER==="DG"&&!e.DG) return false;
-    if(FILTER==="JB"&&!e.JB) return false;
+    if(e.dateKey !== dateKey) return false;
+
+    if(ACTIVE_CREW_FILTER==="TC" && !e.crewTC) return false;
+    if(ACTIVE_CREW_FILTER==="DG" && !e.crewDG) return false;
+    if(ACTIVE_CREW_FILTER==="JB" && !e.crewJB) return false;
+
     return true;
   });
 }
 
+document.getElementById("crewFilter").addEventListener("change", e=>{
+  ACTIVE_CREW_FILTER = e.target.value;
+  renderCalendar();
+  renderEventsPanel();
+});
+
 function renderCalendar(){
+  const year=CURRENT_DATE.getFullYear();
+  const month=CURRENT_DATE.getMonth();
+
+  document.getElementById("month-label").textContent=
+    new Intl.DateTimeFormat("fr-CH",{month:"long",year:"numeric"}).format(new Date(year,month,1));
+
+  const start=new Date(year,month,1).getDay() || 7;
+  const days=new Date(year,month+1,0).getDate();
+  
   const grid=document.getElementById("day-grid");
   grid.innerHTML="";
 
-  document.getElementById("month-label").innerText =
-    CURRENT.toLocaleDateString("fr-CH",{month:"long",year:"numeric"});
+  let offset=start-1;
+  
+  for(let i=1;i<=42;i++){
+    const div=document.createElement("div");
+    div.className="day-cell";
 
-  for(let d=1;d<=31;d++){
-    const date=new Date(CURRENT.getFullYear(),CURRENT.getMonth(),d);
-    if(date.getMonth()!==CURRENT.getMonth()) continue;
+    let num=i-offset;
+    let d=new Date(year,month,num);
 
-    const cell=document.createElement("div");
-    cell.className="day-cell";
-    if(key(date)===key(SELECTED)) cell.classList.add("selected");
-
-    const events=filteredEventsByDate(key(date));
-
-    cell.innerHTML=`<div class='day-number'>${d}</div>`;
-
-    if(events.length){
-      const dots=document.createElement("div");
-      dots.className="event-dots";
-
-      if(events.some(e=>e.TC)) dots.innerHTML+=`<div class="event-dot tc"></div>`;
-      if(events.some(e=>e.DG)) dots.innerHTML+=`<div class="event-dot dg"></div>`;
-      if(events.some(e=>e.JB)) dots.innerHTML+=`<div class="event-dot jb"></div>`;
-      if(!events.some(e=>e.TC||e.DG||e.JB)) dots.innerHTML+=`<div class="event-dot generic"></div>`;
-      cell.appendChild(dots);
-
-      cell.innerHTML+=`<div class='event-count'>${events.length}</div>`;
+    if(num<=0){
+      num=new Date(year,month,0).getDate()+num;
+      d=new Date(year,month-1,num);
+      div.classList.add("other-month");
+    }else if(num>days){
+      num=num-days;
+      d=new Date(year,month+1,num);
+      div.classList.add("other-month");
     }
 
-    cell.onclick=()=>{SELECTED=date;render();};
-    grid.appendChild(cell);
+    div.innerHTML=`<div class='day-number'>${num}</div>`;
+
+    const key=formatDateKey(d);
+    const events=getEventsByDateKey(key);
+
+    if(events.length){
+      const dots=`${
+        events.some(e=>e.crewTC)?"<div class='event-dot tc'></div>":""
+      }${events.some(e=>e.crewDG)?"<div class='event-dot dg'></div>":""}${
+        events.some(e=>e.crewJB)?"<div class='event-dot jb'></div>":""
+      }${events.every(e=>!e.crewTC&&!e.crewDG&&!e.crewJB)?"<div class='event-dot generic'></div>":""}`;
+
+      div.innerHTML+=`<div class="event-dots">${dots}</div>
+                      <div class="event-count">${events.length} prod${events.length>1?"s":""}</div>`;
+    }
+
+    if(key===formatDateKey(SELECTED_DATE)) div.classList.add("selected");
+
+    div.onclick=()=>{
+      SELECTED_DATE=d;
+      renderCalendar();
+      renderEventsPanel();
+    };
+
+    grid.appendChild(div);
   }
 }
 
-function renderEvents(){
+function renderEventsPanel(){
+  const events=getEventsByDateKey(formatDateKey(SELECTED_DATE));
   const list=document.getElementById("events-list");
-  const set=filteredEventsByDate(key(SELECTED));
+  list.innerHTML="";
 
-  document.getElementById("events-date-label").innerText=
-    SELECTED.toLocaleDateString("fr-CH",{weekday:"long",day:"numeric",month:"long"});
+  document.getElementById("events-count-badge").textContent=
+    events.length+" production"+(events.length>1?"s":"");
 
-  if(!set.length){
-    list.innerHTML="<div style='color:#94a3b8;'>Aucune production.</div>";
-    return;
-  }
-
-  list.innerHTML=set.map(e=>`
-    <div class="event-card">
-      <strong>${e.name}</strong><br>
-      📍 ${e.location || "-"}<br>
-      🎥 Crew : ${e.crew || "-"}<br>
-      🧾 Client : ${e.client || "-"}
-    </div>
-  `).join("");
+  events.forEach(e=>{
+    list.innerHTML+=`
+      <div class="event-card">
+        <div class="event-title">${e.prodName}</div>
+        <div class="event-time">${e.time||""}</div>
+        <div class="event-meta">
+          <span><b>Lieu:</b> ${e.location}</span>
+          <span><b>Client:</b> ${e.client}</span>
+          <span><b>Caméras:</b> ${e.camera}</span>
+          <span><b>Car régie:</b> ${e.carRegie}</span>
+          <span><b>Delivery:</b> ${e.delivery}</span>
+        </div>
+        <div class="event-crew"><b>Équipe:</b> ${e.crew||"-"}</div>
+      </div>
+    `;
+  });
 }
 
-document.getElementById("crew-filter").onchange = e => {
-  FILTER=e.target.value;
-  render();
+document.getElementById("today-btn").onclick=()=>{
+  CURRENT_DATE=new Date();
+  SELECTED_DATE=new Date();
+  renderCalendar();
+  renderEventsPanel();
 };
 
-load();
+document.getElementById("prev-month").onclick=()=>{
+  CURRENT_DATE=new Date(CURRENT_DATE.getFullYear(),CURRENT_DATE.getMonth()-1);
+  renderCalendar();
+};
+
+document.getElementById("next-month").onclick=()=>{
+  CURRENT_DATE=new Date(CURRENT_DATE.getFullYear(),CURRENT_DATE.getMonth()+1);
+  renderCalendar();
+};
+
+loadSheetData();
 </script>
 </body>
 </html>
