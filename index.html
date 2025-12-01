@@ -98,38 +98,33 @@
       background: radial-gradient(circle at top left, rgba(59,130,246,0.55), #020617);
     }
     .day-number { font-weight: 600; }
+
+    /* Dots multi-crew */
     .event-dots {
-  position: absolute;
-  left: 6px;
-  bottom: 6px;
-  display: flex;
-  gap: 4px;
-}
+      position: absolute;
+      left: 6px;
+      bottom: 6px;
+      display: flex;
+      gap: 4px;
+    }
+    .event-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+    }
+    .event-dot.tc { background: #3b82f6; }   /* Bleu Tino */
+    .event-dot.dg { background: #ef4444; }   /* Rouge Dominique */
+    .event-dot.jb { background: #ec4899; }   /* Rose Juliane */
+    .event-dot.generic { background: #22c55e; } /* Prod sans crew assigné */
 
-.event-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-}
-
-/* Couleurs crew */
-.event-dot.tc { background: #3b82f6; }   /* Bleu Tino */
-.event-dot.dg { background: #ef4444; }   /* Rouge Dominique */
-.event-dot.jb { background: #ec4899; }   /* Rose Juliane */
-
-/* Quand personne n'est assigné */
-.event-dot.generic { background: #22c55e; }
-
-/* Déplace compteur au-dessus des dots */
-.event-count {
-  position: absolute;
-  left: 6px;
-  bottom: 20px;
-  font-size: 0.7rem;
-  color: #9ca3af;
-  font-weight: 400;
-}
-
+    .event-count {
+      position: absolute;
+      left: 6px;
+      bottom: 20px;
+      font-size: 0.7rem;
+      color: #9ca3af;
+      font-weight: 400;
+    }
 
     .events-panel {
       background: #020617;
@@ -231,7 +226,7 @@
       <div>
         <h1>Calendrier de production – Brates</h1>
         <div class="subtitle">
-          Données depuis Google Sheets · Prods, cars régie & équipes (sans Sarajevo)
+          Données depuis Google Sheets · Prods, cars régie & équipes
         </div>
       </div>
       <div class="badge" id="last-refresh">
@@ -284,19 +279,18 @@
   </div>
 
   <script>
-    // Une URL CSV par trimestre (feuilles sans Sarajevo)
-const SHEET_CSV_URLS = [
-  "https://docs.google.com/spreadsheets/d/e/2PACX-1vRG8oBk4Y39HEq7xq_DDg1WVCjN4TEf3opAJsEZi_yNEDEhg4TRcQ0bQabzQ3MgLwcREI075wRBVOUh/pub?gid=921922711&single=true&output=csv", // Q1
-  "https://docs.google.com/spreadsheets/d/e/2PACX-1vRG8oBk4Y39HEq7xq_DDg1WVCjN4TEf3opAJsEZi_yNEDEhg4TRcQ0bQabzQ3MgLwcREI075wRBVOUh/pub?gid=583322571&single=true&output=csv", // Q2
-  "https://docs.google.com/spreadsheets/d/e/2PACX-1vRG8oBk4Y39HEq7xq_DDg1WVCjN4TEf3opAJsEZi_yNEDEhg4TRcQ0bQabzQ3MgLwcREI075wRBVOUh/pub?gid=1439501887&single=true&output=csv", // Q3
-  "https://docs.google.com/spreadsheets/d/e/2PACX-1vRG8oBk4Y39HEq7xq_DDg1WVCjN4TEf3opAJsEZi_yNEDEhg4TRcQ0bQabzQ3MgLwcREI075wRBVOUh/pub?gid=1883694412&single=true&output=csv"  // Q4
-];
-
+    // URLs CSV pour Q1–Q4 (sans Sarajevo)
+    const SHEET_CSV_URLS = [
+      "https://docs.google.com/spreadsheets/d/e/2PACX-1vRG8oBk4Y39HEq7xq_DDg1WVCjN4TEf3opAJsEZi_yNEDEhg4TRcQ0bQabzQ3MgLwcREI075wRBVOUh/pub?gid=921922711&single=true&output=csv", // Q1
+      "https://docs.google.com/spreadsheets/d/e/2PACX-1vRG8oBk4Y39HEq7xq_DDg1WVCjN4TEf3opAJsEZi_yNEDEhg4TRcQ0bQabzQ3MgLwcREI075wRBVOUh/pub?gid=583322571&single=true&output=csv", // Q2
+      "https://docs.google.com/spreadsheets/d/e/2PACX-1vRG8oBk4Y39HEq7xq_DDg1WVCjN4TEf3opAJsEZi_yNEDEhg4TRcQ0bQabzQ3MgLwcREI075wRBVOUh/pub?gid=1439501887&single=true&output=csv", // Q3
+      "https://docs.google.com/spreadsheets/d/e/2PACX-1vRG8oBk4Y39HEq7xq_DDg1WVCjN4TEf3opAJsEZi_yNEDEhg4TRcQ0bQabzQ3MgLwcREI075wRBVOUh/pub?gid=1883694412&single=true&output=csv"  // Q4
+    ];
 
     const CREW_LABELS = {
       TC: "Tino Chhath",
       DG: "Dominique Gelin",
-      JB: "Juliane Boesh",
+      JB: "Juliane Boesh"
     };
 
     let ALL_EVENTS = [];
@@ -316,11 +310,13 @@ const SHEET_CSV_URLS = [
       const v = String(str).trim();
       if (!v) return null;
 
+      // ISO
       if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
         const d = new Date(v + "T00:00:00");
         return isNaN(d.getTime()) ? null : d;
       }
 
+      // 01.12.2025 ou 01/12/2025
       const m = v.match(/^(\d{1,2})[./](\d{1,2})[./](\d{4})$/);
       if (m) {
         const day = parseInt(m[1], 10);
@@ -366,108 +362,85 @@ const SHEET_CSV_URLS = [
       return rows;
     }
 
-function isSarajevoRow(r) {
-  const banWords = ["sarajevo", "bosnia", "bosnie", "bh", "Q1 2025 - Sarajevo", "saraj"];
-  
-  const fields = [
-    r["Event"], r["event"],
-    r["Location"], r["location"],
-    r["Client"], r["client"],
-    r["Comments"], r["comments"]
-  ];
+    async function loadSheetData() {
+      try {
+        const texts = await Promise.all(
+          SHEET_CSV_URLS.map((url) =>
+            fetch(url).then((res) => {
+              if (!res.ok) throw new Error("HTTP " + res.status);
+              return res.text();
+            })
+          )
+        );
 
-  return fields.some((v) => {
-    if (!v) return false;
-    const str = String(v).toLowerCase();
-    return banWords.some(w => str.includes(w));
-  });
-}
+        const rows = texts.flatMap((text) => parseCSV(text));
 
+        ALL_EVENTS = rows
+          .map((r) => {
+            const dateRaw = r["Date"] || r["date"];
+            const d = parseDateCell(dateRaw);
+            if (!d || isNaN(d.getTime())) return null;
+            d.setHours(0, 0, 0, 0);
 
+            const eventName = r["Event"] || r["event"] || "";
+            if (!eventName || eventName.trim().length < 2) return null;
 
-   async function loadSheetData() {
-  try {
-    // charge toutes les feuilles en parallèle
-    const texts = await Promise.all(
-      SHEET_CSV_URLS.map((url) =>
-        fetch(url).then((res) => {
-          if (!res.ok) throw new Error("HTTP " + res.status);
-          return res.text();
-        })
-      )
-    );
+            // Crew flags + liste
+            const crewParts = [];
+            const crewFlags = { TC: false, DG: false, JB: false };
+            Object.keys(CREW_LABELS).forEach((col) => {
+              const raw = r[col];
+              if (!raw) return;
+              const v = String(raw).trim().toLowerCase();
+              const PRESENT_VALUES = ["x", "1", "yes", "oui"];
+              if (PRESENT_VALUES.includes(v)) {
+                crewParts.push(CREW_LABELS[col]);
+                if (crewFlags.hasOwnProperty(col)) {
+                  crewFlags[col] = true;
+                }
+              }
+            });
 
-    // parse chaque CSV et concatène
-    const rows = texts.flatMap((text) => parseCSV(text));
+            const delivery =
+              r["Delivery Protocol"] || r["Delivery protocol"] || "";
+            const client = r["Client"] || r["client"] || "";
 
-    ALL_EVENTS = rows
-      .map((r) => {
-        // sécurité : si un jour Sarajevo se glisse dans un Qx
-        if (typeof isSarajevoRow === "function" && isSarajevoRow(r)) return null;
+            return {
+              date: d,
+              dateKey: formatDateKey(d),
+              time: r["Time"] || r["time"] || "",
+              prodName: eventName,
+              location: r["Location"] || r["location"] || "",
+              carRegie: r["Provider"] || r["provider"] || "",
+              camera: r["Camera"] || "",
+              delivery: delivery,
+              internet: r["Internet"] || "",
+              client: client,
+              crew: crewParts.join(" / "),
+              crewTC: crewFlags.TC,
+              crewDG: crewFlags.DG,
+              crewJB: crewFlags.JB
+            };
+          })
+          .filter((x) => x !== null)
+          .sort((a, b) => {
+            if (a.date.getTime() !== b.date.getTime()) {
+              return a.date - b.date;
+            }
+            return (a.time || "").localeCompare(b.time || "");
+          });
 
-        const dateRaw = r["Date"] || r["date"];
-        const d = parseDateCell(dateRaw);
-        if (!d || isNaN(d.getTime())) return null;
+        document.getElementById("last-refresh").textContent =
+          "Dernière maj: " + new Date().toLocaleString("fr-CH");
 
-        d.setHours(0, 0, 0, 0); // évite les décalages de fuseau
-
-        const eventName = r["Event"] || r["event"] || "";
-        if (!eventName || eventName.trim().length < 2) return null;
-
-       const crewParts = [];
-Object.keys(CREW_LABELS).forEach((col) => {
-  const raw = r[col];
-  if (!raw) return;
-
-  const v = String(raw).trim().toLowerCase();
-
-  // valeurs qui comptent comme "présent sur la prod"
-  const PRESENT_VALUES = ["x", "1", "yes", "oui"];
-
-  if (PRESENT_VALUES.includes(v)) {
-    crewParts.push(CREW_LABELS[col]);
-  }
-});
-
-
-        const delivery =
-          r["Delivery Protocol"] || r["Delivery protocol"] || "";
-        const client = r["Client"] || r["client"] || "";
-
-        return {
-          date: d,
-          dateKey: formatDateKey(d),
-          time: r["Time"] || r["time"] || "",
-          prodName: eventName,
-          location: r["Location"] || r["location"] || "",
-          carRegie: r["Provider"] || r["provider"] || "",
-          camera: r["Camera"] || "",
-          delivery: delivery,
-          internet: r["Internet"] || "",
-          client: client,
-          crew: crewParts.join(" / "),
-        };
-      })
-      .filter((x) => x !== null)
-      .sort((a, b) => {
-        if (a.date.getTime() !== b.date.getTime()) {
-          return a.date - b.date;
-        }
-        return (a.time || "").localeCompare(b.time || "");
-      });
-
-    document.getElementById("last-refresh").textContent =
-      "Dernière maj: " + new Date().toLocaleString("fr-CH");
-
-    renderCalendar();
-    renderEventsPanel();
-  } catch (err) {
-    console.error("Erreur chargement sheets:", err);
-    document.getElementById("last-refresh").textContent =
-      "Erreur chargement Google Sheets";
-  }
-}
-
+        renderCalendar();
+        renderEventsPanel();
+      } catch (err) {
+        console.error("Erreur chargement sheets:", err);
+        document.getElementById("last-refresh").textContent =
+          "Erreur chargement Google Sheets";
+      }
+    }
 
     function getEventsByDateKey(dateKey) {
       return ALL_EVENTS.filter((e) => e.dateKey === dateKey);
@@ -480,7 +453,7 @@ Object.keys(CREW_LABELS).forEach((col) => {
       const monthLabelEl = document.getElementById("month-label");
       const formatter = new Intl.DateTimeFormat("fr-CH", {
         month: "long",
-        year: "numeric",
+        year: "numeric"
       });
       monthLabelEl.textContent = formatter.format(new Date(year, month, 1));
 
@@ -525,51 +498,50 @@ Object.keys(CREW_LABELS).forEach((col) => {
         cell.appendChild(numberEl);
 
         if (eventsForDay.length > 0) {
+          const hasTC = eventsForDay.some((e) => e.crewTC);
+          const hasDG = eventsForDay.some((e) => e.crewDG);
+          const hasJB = eventsForDay.some((e) => e.crewJB);
 
-  const hasTC = eventsForDay.some(e => e.crewTC);
-  const hasDG = eventsForDay.some(e => e.crewDG);
-  const hasJB = eventsForDay.some(e => e.crewJB);
+          const dotsWrap = document.createElement("div");
+          dotsWrap.className = "event-dots";
 
-  const dotsWrap = document.createElement("div");
-  dotsWrap.className = "event-dots";
+          let crewAssigned = false;
 
-  let crewAssigned = false;
+          if (hasTC) {
+            const d = document.createElement("div");
+            d.className = "event-dot tc";
+            dotsWrap.appendChild(d);
+            crewAssigned = true;
+          }
+          if (hasDG) {
+            const d = document.createElement("div");
+            d.className = "event-dot dg";
+            dotsWrap.appendChild(d);
+            crewAssigned = true;
+          }
+          if (hasJB) {
+            const d = document.createElement("div");
+            d.className = "event-dot jb";
+            dotsWrap.appendChild(d);
+            crewAssigned = true;
+          }
 
-  if (hasTC) {
-    const d = document.createElement("div");
-    d.className = "event-dot tc";
-    dotsWrap.appendChild(d);
-    crewAssigned = true;
-  }
+          if (!crewAssigned) {
+            const d = document.createElement("div");
+            d.className = "event-dot generic";
+            dotsWrap.appendChild(d);
+          }
 
-  if (hasDG) {
-    const d = document.createElement("div");
-    d.className = "event-dot dg";
-    dotsWrap.appendChild(d);
-    crewAssigned = true;
-  }
+          cell.appendChild(dotsWrap);
 
-  if (hasJB) {
-    const d = document.createElement("div");
-    d.className = "event-dot jb";
-    dotsWrap.appendChild(d);
-    crewAssigned = true;
-  }
-
-  if (!crewAssigned) {
-    const d = document.createElement("div");
-    d.className = "event-dot generic";
-    dotsWrap.appendChild(d);
-  }
-
-  cell.appendChild(dotsWrap);
-
-  const count = document.createElement("div");
-  count.className = "event-count";
-  count.textContent =
-    eventsForDay.length + " prod" + (eventsForDay.length > 1 ? "s" : "");
-  cell.appendChild(count);
-}
+          const count = document.createElement("div");
+          count.className = "event-count";
+          count.textContent =
+            eventsForDay.length +
+            " prod" +
+            (eventsForDay.length > 1 ? "s" : "");
+          cell.appendChild(count);
+        }
 
         if (dateKey === selectedKey) {
           cell.classList.add("selected");
@@ -591,7 +563,7 @@ Object.keys(CREW_LABELS).forEach((col) => {
         weekday: "long",
         day: "2-digit",
         month: "long",
-        year: "numeric",
+        year: "numeric"
       });
 
       const label = formatter.format(SELECTED_DATE);
@@ -754,4 +726,3 @@ Object.keys(CREW_LABELS).forEach((col) => {
   </script>
 </body>
 </html>
-
