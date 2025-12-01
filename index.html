@@ -2,345 +2,264 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <title>Calendrier de production - Brates</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Brates — Production Scheduler</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #0f172a;
-      color: #e5e7eb;
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      padding: 24px;
-    }
-    .app {
-      width: 100%;
-      max-width: 1200px;
-      background: #020617;
-      border-radius: 16px;
-      padding: 20px;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
-      border: 1px solid rgba(148,163,184,0.3);
-    }
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-    }
-    header h1 { font-size: 1.5rem; font-weight: 700; }
-    .subtitle { font-size: 0.9rem; color: #9ca3af; }
-
-    /* ---- CREW FILTER UI ---- */
-    .filter-row {
-      margin-bottom: 12px;
-      display:flex;
-      align-items:center;
-      gap:10px;
-    }
-    select {
-      padding:6px 10px;
-      background:#111827;
-      border:1px solid #1f2937;
-      border-radius:8px;
-      color:#e5e7eb;
-      cursor:pointer;
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{
+      background:#0f172a;
+      color:white;
+      font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      display:flex;justify-content:center;
+      padding:20px;
     }
 
-    .layout {
-      display: grid;
-      grid-template-columns: 1.1fr 1.6fr;
-      gap: 20px;
-      margin-top: 10px;
-    }
-    @media (max-width: 900px) {
-      .layout { grid-template-columns: 1fr; }
+    .app{
+      width:100%;max-width:1200px;
+      padding:20px;border-radius:16px;
+      background:#020617;border:1px solid #1e293b;
+      box-shadow:0 20px 40px rgba(0,0,0,.5);
     }
 
-    .calendar {
-      background: #020617;
-      border-radius: 12px;
-      border: 1px solid rgba(148,163,184,0.3);
-      padding: 16px;
-    }
-    .cal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
-    }
-    .month-label { font-weight: 600; }
-    .cal-nav button {
-      background: #111827;
-      color: #e5e7eb;
-      border: 1px solid #1f2937;
-      padding: 4px 10px;
-      border-radius: 999px;
-      cursor: pointer;
-      font-size: 0.8rem;
-    }
-    .cal-nav button:hover { background: #1f2937; }
+    header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+    .subtitle{color:#94a3b8;font-size:.9rem;}
 
-    .weekday-row, .day-grid {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 4px;
-    }
-    .weekday {
-      text-align: center;
-      font-size: 0.75rem;
-      color: #9ca3af;
-      padding: 4px 0;
+    select{
+      padding:6px 12px;border-radius:8px;border:1px solid #1e293b;
+      background:#111827;color:white;cursor:pointer;
     }
 
-    .day-cell {
-      position: relative;
-      min-height: 60px;
-      padding: 4px;
-      border-radius: 10px;
-      text-align: right;
-      font-size: 0.8rem;
-      cursor: pointer;
-      border: 1px solid transparent;
-    }
-    .day-cell.other-month { opacity: 0.25; }
-    .day-cell:hover {
-      border-color: #1d4ed8;
-      background: #020617;
-    }
-    .day-cell.selected {
-      border-color: #3b82f6;
-      background: radial-gradient(circle at top left, rgba(59,130,246,0.55), #020617);
-    }
-    .day-number { font-weight: 600; }
-
-    /* DOT STYLE */
-    .event-dots {
-      position: absolute;
-      left: 6px;
-      bottom: 6px;
-      display: flex;
-      gap: 4px;
-    }
-    .event-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 999px;
-    }
-    .event-dot.tc { background: #3b82f6; }
-    .event-dot.dg { background: #ef4444; }
-    .event-dot.jb { background: #ec4899; }
-    .event-dot.generic { background: #22c55e; }
-
-    .event-count {
-      position: absolute;
-      left: 6px;
-      bottom: 20px;
-      font-size: 0.7rem;
-      color: #9ca3af;
-      font-weight: 400;
+    .filter-row{
+      margin-top:10px;margin-bottom:20px;
+      display:flex;align-items:center;gap:10px;
     }
 
-    .events-panel {
-      background: #020617;
-      border-radius: 12px;
-      border: 1px solid rgba(148,163,184,0.3);
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
+    .layout{
+      display:grid;grid-template-columns:1.1fr 1.6fr;gap:20px;
     }
 
-    .event-card {
-      border-radius: 10px;
-      border: 1px solid #1f2937;
-      padding: 10px;
-      margin-bottom: 8px;
-      background: radial-gradient(circle at top left, rgba(59,130,246,0.12), #020617);
+    @media(max-width:900px){
+      .layout{grid-template-columns:1fr;}
     }
+
+    .calendar, .events-panel{
+      border:1px solid #1e293b;
+      border-radius:12px;padding:16px;
+      background:#0b1221;
+    }
+
+    .month-label{font-weight:700;font-size:1.2rem;margin-bottom:10px;}
+
+    .weekday-row,.day-grid{
+      display:grid;grid-template-columns:repeat(7,1fr);gap:4px;
+    }
+
+    .weekday{font-size:.75rem;color:#94a3b8;text-align:center;padding:4px;}
+
+    .day-cell{
+      min-height:60px;border-radius:10px;padding:6px;
+      cursor:pointer;position:relative;font-size:.8rem;text-align:right;
+      border:1px solid transparent;
+    }
+
+    .day-cell:hover{border-color:#1d4ed8;}
+
+    .day-cell.selected{
+      border-color:#3b82f6;
+      background:radial-gradient(circle at top left,rgba(59,130,246,.4),#0b1221);
+    }
+
+    .day-number{font-weight:600;}
+
+    .event-dots{position:absolute;left:6px;bottom:6px;display:flex;gap:4px;}
+    .event-dot{width:8px;height:8px;border-radius:100%;}
+    .tc{background:#3b82f6;}
+    .dg{background:#ef4444;}
+    .jb{background:#ec4899;}
+    .generic{background:#22c55e;}
+
+    .event-count{
+      position:absolute;left:6px;bottom:20px;font-size:.7rem;color:#94a3b8;
+    }
+
+    .event-card{
+      background:#102038;padding:10px;border-radius:8px;border:1px solid #1e293b;margin-bottom:8px;
+    }
+    .event-card strong{color:#38bdf8;}
   </style>
 </head>
 
 <body>
 <div class="app">
 
-  <header>
-    <div>
-      <h1>Calendrier de production – Brates</h1>
-      <div class="subtitle">Données Google Sheets · Prods, cars régie & équipe</div>
+<header>
+  <div>
+    <h1>Calendrier Prod — Brates</h1>
+    <div class="subtitle">Sync Google Sheets · Car régie · Crew assigné</div>
+  </div>
+  <div id="last-refresh" style="font-size:.8rem;color:#94a3b8;">–</div>
+</header>
+
+<div class="filter-row">
+  <label>Afficher pour :</label>
+  <select id="crew-filter">
+    <option value="all">Tous</option>
+    <option value="TC">Tino</option>
+    <option value="DG">Dominique</option>
+    <option value="JB">Juliane</option>
+  </select>
+</div>
+
+<div class="layout">
+  <section class="calendar">
+    <div class="month-label" id="month-label"></div>
+    <div class="weekday-row">
+      <div>Lun</div><div>Mar</div><div>Mer</div><div>Jeu</div><div>Ven</div><div>Sam</div><div>Dim</div>
     </div>
-    <div class="badge" id="last-refresh">–</div>
-  </header>
+    <div id="day-grid" class="day-grid"></div>
+  </section>
 
-  <!-- 🔥 CREW FILTER -->
-  <div class="filter-row">
-    <label>Afficher :</label>
-    <select id="crew-filter">
-      <option value="all">Tous</option>
-      <option value="TC">Tino</option>
-      <option value="DG">Dominique</option>
-      <option value="JB">Juliane</option>
-    </select>
-  </div>
+  <section class="events-panel">
+    <h2 id="events-title">Prods du jour</h2>
+    <small id="events-date-label"></small>
+    <div id="events-list" style="margin-top:10px;"></div>
+  </section>
+</div>
 
-  <div class="layout">
-
-    <section class="calendar">
-      <div class="cal-header">
-        <div id="month-label" class="month-label"></div>
-        <div class="cal-nav">
-          <button id="prev-month">&lt;</button>
-          <button id="today-btn">Aujourd’hui</button>
-          <button id="next-month">&gt;</button>
-        </div>
-      </div>
-
-      <div class="weekday-row">
-        <div>Lun</div><div>Mar</div><div>Mer</div><div>Jeu</div>
-        <div>Ven</div><div>Sam</div><div>Dim</div>
-      </div>
-      <div id="day-grid" class="day-grid"></div>
-    </section>
-
-    <section class="events-panel">
-      <h2 id="events-title">Prods du jour</h2>
-      <small id="events-date-label"></small>
-      <div id="events-list"></div>
-    </section>
-
-  </div>
 </div>
 
 <script>
-let FILTER_CREW="all";
+let FILTER="all";
 let ALL_EVENTS=[];
-let CURRENT_DATE=new Date();
-let SELECTED_DATE=new Date();
+let CURRENT=new Date();
+let SELECTED=new Date();
 
 const URLS=[
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vRG8oBk4Y39HEq7xq_DDg1WVCjN4TEf3opAJsEZi_yNEDEhg4TRcQ0bQabzQ3MgLwcREI075wRBVOUh/pub?gid=921922711&single=true&output=csv",
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vRG8oBk4Y39HEq7xq_DDg1WVCjN4TEf3opAJsEZi_yNEDEhg4TRcQ0bQabzQ3MgLwcREI075wRBVOUh/pub?gid=583322571&single=true&output=csv",
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vRG8oBk4Y39HEq7xq_DDg1WVCjN4TEf3opAJsEZi_yNEDEhg4TRcQ0bQabzQ3MgLwcREI075wRBVOUh/pub?gid=1439501887&single=true&output=csv",
-  "https://docs.google.com/spreadsheets/d/e/2PACX-1vRG8oBk4Y39HEq7xq_DDg1WVCjN4TEf3opAJsEZi_yNEDEhg4TRcQ0bQabzQ3MgLwcREI075wRBVOUh/pub?gid=1883694412&single=true&output=csv",
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vRG8oBk4Y39HEq7xq_DDg1WVCjN4TEf3opAJsEZi_yNEDEhg4TRcQ0bQabzQ3MgLwcREI075wRBVOUh/pub?gid=1883694412&single=true&output=csv"
 ];
 
-function formatDateKey(d){return d.toISOString().split("T")[0];}
-
-function getEventsByDate(d){
-  return ALL_EVENTS.filter(e=>{
-    if(e.dateKey!==d) return false;
-    if(FILTER_CREW==="TC"&& !e.TC) return false;
-    if(FILTER_CREW==="DG"&& !e.DG) return false;
-    if(FILTER_CREW==="JB"&& !e.JB) return false;
-    return true;
-  });
+function key(d){
+  return d.toISOString().split("T")[0];
 }
 
-async function load() {
-  const texts = await Promise.all(URLS.map(u => fetch(u).then(r => r.text())));
+async function load(){
+  ALL_EVENTS=[];
 
-  ALL_EVENTS = [];
+  const csvArr=await Promise.all(URLS.map(u=>fetch(u).then(r=>r.text())));
 
-  texts.forEach(text => {
-    const rows = text.split(/\r?\n/).map(l => l.split(","));
-    const header = rows[0];
+  csvArr.forEach(text=>{
+    const lines=text.split(/\r?\n/).map(l=>l.split(","));
+    lines.slice(1).forEach(cols=>{
+      if(!cols[0] || !cols[2]) return;
 
-    rows.slice(1).forEach(cols => {
-      if (!cols[0] || cols[0].trim() === "") return;
-
-      const date = new Date(cols[0]);
-      const dateKey = cols[0].trim();
-
-      const crewFlags = {
-        TC: ["x","1","oui","yes"].includes((cols[9] || "").toLowerCase()),
-        DG: ["x","1","oui","yes"].includes((cols[10] || "").toLowerCase()),
-        JB: ["x","1","oui","yes"].includes((cols[11] || "").toLowerCase())
+      const date=new Date(cols[0]);
+      const flags={
+        TC:["x","1","oui","yes"].includes((cols[9]||"").toLowerCase()),
+        DG:["x","1","oui","yes"].includes((cols[10]||"").toLowerCase()),
+        JB:["x","1","oui","yes"].includes((cols[11]||"").toLowerCase()),
       };
 
       ALL_EVENTS.push({
+        dateKey:cols[0],
         date,
-        dateKey,
-        name: cols[2] || "",
-        time: cols[1] || "",
-        location: cols[3] || "",
-        provider: cols[4] || "",
-        camera: cols[5] || "",
-        delivery: cols[6] || "",
-        internet: cols[7] || "",
-        client: cols[8] || "",
-        ...crewFlags,
-        crewList: [
-          crewFlags.TC ? "Tino" : null,
-          crewFlags.DG ? "Dominique" : null,
-          crewFlags.JB ? "Juliane" : null,
+        name:cols[2],
+        location:cols[3],
+        client:cols[8],
+        ...flags,
+        crew:[
+          flags.TC?"Tino":null,
+          flags.DG?"Dominique":null,
+          flags.JB?"Juliane":null
         ].filter(Boolean).join(" / ")
       });
     });
   });
 
-  document.getElementById("last-refresh").textContent =
-    "Maj: " + new Date().toLocaleString("fr-CH");
+  document.getElementById("last-refresh").innerText="Maj : "+new Date().toLocaleString("fr-CH");
 
   render();
 }
-
 
 function render(){
   renderCalendar();
   renderEvents();
 }
 
+function filteredEventsByDate(dateKey){
+  return ALL_EVENTS.filter(e=>{
+    if(e.dateKey!==dateKey) return false;
+    if(FILTER==="TC"&&!e.TC) return false;
+    if(FILTER==="DG"&&!e.DG) return false;
+    if(FILTER==="JB"&&!e.JB) return false;
+    return true;
+  });
+}
+
 function renderCalendar(){
   const grid=document.getElementById("day-grid");
   grid.innerHTML="";
-  
-  for(let i=1;i<=31;i++){
-    let d=new Date(CURRENT_DATE.getFullYear(),CURRENT_DATE.getMonth(),i);
-    if(isNaN(d)) continue;
 
-    let key=formatDateKey(d);
-    const events=getEventsByDate(key);
+  document.getElementById("month-label").innerText =
+    CURRENT.toLocaleDateString("fr-CH",{month:"long",year:"numeric"});
+
+  for(let d=1;d<=31;d++){
+    const date=new Date(CURRENT.getFullYear(),CURRENT.getMonth(),d);
+    if(date.getMonth()!==CURRENT.getMonth()) continue;
+
     const cell=document.createElement("div");
     cell.className="day-cell";
+    if(key(date)===key(SELECTED)) cell.classList.add("selected");
 
-    cell.innerHTML=`<div class="day-number">${i}</div>`;
+    const events=filteredEventsByDate(key(date));
+
+    cell.innerHTML=`<div class='day-number'>${d}</div>`;
 
     if(events.length){
-      const dot=document.createElement("div");
-      dot.className="event-dots";
-      if(events.some(e=>e.TC)) dot.innerHTML+=`<div class="event-dot tc"></div>`;
-      if(events.some(e=>e.DG)) dot.innerHTML+=`<div class="event-dot dg"></div>`;
-      if(events.some(e=>e.JB)) dot.innerHTML+=`<div class="event-dot jb"></div>`;
-      if(!events.some(e=>e.TC||e.DG||e.JB)) dot.innerHTML+=`<div class="event-dot generic"></div>`;
-      cell.appendChild(dot);
+      const dots=document.createElement("div");
+      dots.className="event-dots";
+
+      if(events.some(e=>e.TC)) dots.innerHTML+=`<div class="event-dot tc"></div>`;
+      if(events.some(e=>e.DG)) dots.innerHTML+=`<div class="event-dot dg"></div>`;
+      if(events.some(e=>e.JB)) dots.innerHTML+=`<div class="event-dot jb"></div>`;
+      if(!events.some(e=>e.TC||e.DG||e.JB)) dots.innerHTML+=`<div class="event-dot generic"></div>`;
+      cell.appendChild(dots);
+
+      cell.innerHTML+=`<div class='event-count'>${events.length}</div>`;
     }
 
-    cell.onclick=()=>{SELECTED_DATE=d;render();}
+    cell.onclick=()=>{SELECTED=date;render();};
     grid.appendChild(cell);
   }
 }
 
 function renderEvents(){
   const list=document.getElementById("events-list");
-  const key=formatDateKey(SELECTED_DATE);
-  const ev=getEventsByDate(key);
+  const set=filteredEventsByDate(key(SELECTED));
 
   document.getElementById("events-date-label").innerText=
-    SELECTED_DATE.toLocaleDateString("fr-CH",{weekday:"long",day:"numeric",month:"long"});
+    SELECTED.toLocaleDateString("fr-CH",{weekday:"long",day:"numeric",month:"long"});
 
-  list.innerHTML=ev.length?ev.map(e=>`
+  if(!set.length){
+    list.innerHTML="<div style='color:#94a3b8;'>Aucune production.</div>";
+    return;
+  }
+
+  list.innerHTML=set.map(e=>`
     <div class="event-card">
-      <div><strong>Prod:</strong> ${e.name}</div>
-      <div><strong>Lieu:</strong> ${e.location}</div>
-      <div><strong>Crew:</strong> ${e.crewList||"–"}</div>
+      <strong>${e.name}</strong><br>
+      📍 ${e.location || "-"}<br>
+      🎥 Crew : ${e.crew || "-"}<br>
+      🧾 Client : ${e.client || "-"}
     </div>
-  `).join(""):"<div>Aucune prod.</div>";
+  `).join("");
 }
 
-document.getElementById("crew-filter").onchange=e=>{
-  FILTER_CREW=e.target.value;
+document.getElementById("crew-filter").onchange = e => {
+  FILTER=e.target.value;
   render();
 };
 
