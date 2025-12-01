@@ -398,12 +398,21 @@ function isSarajevoRow(r) {
         const eventName = r["Event"] || r["event"] || "";
         if (!eventName || eventName.trim().length < 2) return null;
 
-        const crewParts = [];
-        Object.keys(CREW_LABELS).forEach((col) => {
-          if (r[col] && String(r[col]).trim() !== "") {
-            crewParts.push(CREW_LABELS[col]);
-          }
-        });
+       const crewParts = [];
+Object.keys(CREW_LABELS).forEach((col) => {
+  const raw = r[col];
+  if (!raw) return;
+
+  const v = String(raw).trim().toLowerCase();
+
+  // valeurs qui comptent comme "présent sur la prod"
+  const PRESENT_VALUES = ["x", "1", "yes", "oui"];
+
+  if (PRESENT_VALUES.includes(v)) {
+    crewParts.push(CREW_LABELS[col]);
+  }
+});
+
 
         const delivery =
           r["Delivery Protocol"] || r["Delivery protocol"] || "";
