@@ -344,21 +344,24 @@
       return rows;
     }
 
-    function isSarajevoRow(r) {
-      const fields = [
-        r["Event"],
-        r["event"],
-        r["Location"],
-        r["location"],
-        r["Client"],
-        r["client"],
-        r["Comments"],
-        r["comments"],
-      ];
-      return fields.some((v) =>
-        v && String(v).toLowerCase().includes("sarajevo")
-      );
-    }
+function isSarajevoRow(r) {
+  const banWords = ["sarajevo", "bosnia", "bosnie", "bh", "Q1 2025 - Sarajevo", "saraj"];
+  
+  const fields = [
+    r["Event"], r["event"],
+    r["Location"], r["location"],
+    r["Client"], r["client"],
+    r["Comments"], r["comments"]
+  ];
+
+  return fields.some((v) => {
+    if (!v) return false;
+    const str = String(v).toLowerCase();
+    return banWords.some(w => str.includes(w));
+  });
+}
+
+
 
     async function loadSheetData() {
       try {
