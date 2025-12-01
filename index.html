@@ -375,7 +375,14 @@ function isSarajevoRow(r) {
 
             const dateRaw = r["Date"] || r["date"];
             const d = parseDateCell(dateRaw);
-            if (!d) return null;
+
+// ❌ Ignore toute ligne sans date valide ou vide
+if (!d || isNaN(d.getTime())) return null;
+
+// ❌ Ignore lignes sans nom d'event
+const eventName = r["Event"] || r["event"] || "";
+if (!eventName || eventName.trim().length < 2) return null;
+
 
             const crewParts = [];
             Object.keys(CREW_LABELS).forEach((col) => {
