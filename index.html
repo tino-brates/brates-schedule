@@ -98,22 +98,38 @@
       background: radial-gradient(circle at top left, rgba(59,130,246,0.55), #020617);
     }
     .day-number { font-weight: 600; }
-    .event-dot {
-      position: absolute;
-      left: 6px;
-      bottom: 6px;
-      width: 8px;
-      height: 8px;
-      border-radius: 999px;
-      background: #22c55e;
-    }
-    .event-count {
-      position: absolute;
-      left: 18px;
-      bottom: 2px;
-      font-size: 0.7rem;
-      color: #9ca3af;
-    }
+    .event-dots {
+  position: absolute;
+  left: 6px;
+  bottom: 6px;
+  display: flex;
+  gap: 4px;
+}
+
+.event-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+}
+
+/* Couleurs crew */
+.event-dot.tc { background: #3b82f6; }   /* Bleu Tino */
+.event-dot.dg { background: #ef4444; }   /* Rouge Dominique */
+.event-dot.jb { background: #ec4899; }   /* Rose Juliane */
+
+/* Quand personne n'est assigné */
+.event-dot.generic { background: #22c55e; }
+
+/* Déplace compteur au-dessus des dots */
+.event-count {
+  position: absolute;
+  left: 6px;
+  bottom: 20px;
+  font-size: 0.7rem;
+  color: #9ca3af;
+  font-weight: 400;
+}
+
 
     .events-panel {
       background: #020617;
@@ -509,18 +525,51 @@ Object.keys(CREW_LABELS).forEach((col) => {
         cell.appendChild(numberEl);
 
         if (eventsForDay.length > 0) {
-          const dot = document.createElement("div");
-          dot.className = "event-dot";
-          cell.appendChild(dot);
 
-          const count = document.createElement("div");
-          count.className = "event-count";
-          count.textContent =
-            eventsForDay.length +
-            " prod" +
-            (eventsForDay.length > 1 ? "s" : "");
-          cell.appendChild(count);
-        }
+  const hasTC = eventsForDay.some(e => e.crewTC);
+  const hasDG = eventsForDay.some(e => e.crewDG);
+  const hasJB = eventsForDay.some(e => e.crewJB);
+
+  const dotsWrap = document.createElement("div");
+  dotsWrap.className = "event-dots";
+
+  let crewAssigned = false;
+
+  if (hasTC) {
+    const d = document.createElement("div");
+    d.className = "event-dot tc";
+    dotsWrap.appendChild(d);
+    crewAssigned = true;
+  }
+
+  if (hasDG) {
+    const d = document.createElement("div");
+    d.className = "event-dot dg";
+    dotsWrap.appendChild(d);
+    crewAssigned = true;
+  }
+
+  if (hasJB) {
+    const d = document.createElement("div");
+    d.className = "event-dot jb";
+    dotsWrap.appendChild(d);
+    crewAssigned = true;
+  }
+
+  if (!crewAssigned) {
+    const d = document.createElement("div");
+    d.className = "event-dot generic";
+    dotsWrap.appendChild(d);
+  }
+
+  cell.appendChild(dotsWrap);
+
+  const count = document.createElement("div");
+  count.className = "event-count";
+  count.textContent =
+    eventsForDay.length + " prod" + (eventsForDay.length > 1 ? "s" : "");
+  cell.appendChild(count);
+}
 
         if (dateKey === selectedKey) {
           cell.classList.add("selected");
