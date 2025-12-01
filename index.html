@@ -40,7 +40,6 @@
       align-items: flex-end;
       gap: 6px;
     }
-
     .crew-filter {
       background:#020617;
       color:#e5e7eb;
@@ -49,6 +48,30 @@
       padding:4px 10px;
       font-size:0.8rem;
     }
+
+    /* Légende crew */
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+      font-size: 0.8rem;
+      color: #9ca3af;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+    }
+    .legend-dot.tc { background: #3b82f6; }   /* Bleu Tino */
+    .legend-dot.dg { background: #ef4444; }   /* Rouge Dominique */
+    .legend-dot.jb { background: #ec4899; }   /* Rose Juliane */
 
     .layout {
       display: grid;
@@ -235,54 +258,6 @@
       color: #9ca3af;
       margin-top: 12px;
     }
-
-    .add-btn {
-      background:#16a34a;
-      color:#fff;
-      border:none;
-      border-radius:999px;
-      padding:6px 12px;
-      font-size:0.8rem;
-      cursor:pointer;
-    }
-    .add-btn:hover {
-      background:#15803d;
-    }
-    #add-form {
-      display:none;
-      padding:10px;
-      background:#111827;
-      border-radius:10px;
-      margin-top:8px;
-      font-size:0.8rem;
-    }
-    #add-form label {
-      display:block;
-      margin-top:6px;
-      margin-bottom:2px;
-    }
-    #add-form input[type="text"],
-    #add-form input[type="date"],
-    #add-form input[type="time"] {
-      width:100%;
-      background:#020617;
-      border:1px solid #1f2937;
-      border-radius:6px;
-      padding:4px 6px;
-      color:#e5e7eb;
-      font-size:0.8rem;
-    }
-    #add-form .crew-checkboxes {
-      display:flex;
-      gap:12px;
-      margin-top:8px;
-      margin-bottom:8px;
-      align-items:center;
-      flex-wrap:wrap;
-    }
-    #add-form button {
-      margin-top:6px;
-    }
   </style>
 </head>
 <body>
@@ -306,6 +281,22 @@
         </select>
       </div>
     </header>
+
+    <!-- Légende couleurs crew -->
+    <div class="legend">
+      <div class="legend-item">
+        <span class="legend-dot tc"></span>
+        <span>Tino</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-dot dg"></span>
+        <span>Dominique</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-dot jb"></span>
+        <span>Juliane</span>
+      </div>
+    </div>
 
     <div class="layout">
       <section class="calendar">
@@ -335,54 +326,14 @@
             <h2 id="events-title">Prods du jour</h2>
             <small id="events-date-label"></small>
           </div>
-          <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;">
-            <div class="badge" id="events-count-badge">0 prods</div>
-            <button id="openForm" class="add-btn">➕ Ajouter une production</button>
-          </div>
-        </div>
-
-        <div id="add-form">
-          <label for="f_date">Date</label>
-          <input id="f_date" type="date" />
-
-          <label for="f_time">Heure</label>
-          <input id="f_time" type="time" />
-
-          <label for="f_event">Nom de la prod / event</label>
-          <input id="f_event" type="text" />
-
-          <label for="f_location">Lieu</label>
-          <input id="f_location" type="text" />
-
-          <label for="f_provider">Car régie / Provider</label>
-          <input id="f_provider" type="text" />
-
-          <label for="f_camera">Setup caméra</label>
-          <input id="f_camera" type="text" />
-
-          <label for="f_delivery">Delivery protocol (SRT, RTMP…)</label>
-          <input id="f_delivery" type="text" />
-
-          <label for="f_internet">Internet (source)</label>
-          <input id="f_internet" type="text" />
-
-          <label for="f_client">Client</label>
-          <input id="f_client" type="text" />
-
-          <div class="crew-checkboxes">
-            <label><input type="checkbox" id="f_tc" /> TC</label>
-            <label><input type="checkbox" id="f_dg" /> DG</label>
-            <label><input type="checkbox" id="f_jb" /> JB</label>
-          </div>
-
-          <button id="submitEvent" class="add-btn">✔ Enregistrer la production</button>
+          <div class="badge" id="events-count-badge">0 prods</div>
         </div>
 
         <div class="search-bar">
           <input
             id="search-input"
             type="text"
-            placeholder="Rechercher (prod, lieu, car régie, crew, client)..."
+            placeholder="Rechercher (prod, lieu, moyen de production, crew, client)..."
           />
         </div>
 
@@ -392,12 +343,11 @@
   </div>
 
   <script>
-    // URLs CSV pour Q1–Q4 (sans Sarajevo)
     const SHEET_CSV_URLS = [
-      "https://docs.google.com/spreadsheets/d/e/2PACX-1vRG8oBk4Y39HEq7xq_DDg1WVCjN4TEf3opAJsEZi_yNEDEhg4TRcQ0bQabzQ3MgLwcREI075wRBVOUh/pub?gid=921922711&single=true&output=csv", // Q1
-      "https://docs.google.com/spreadsheets/d/e/2PACX-1vRG8oBk4Y39HEq7xq_DDg1WVCjN4TEf3opAJsEZi_yNEDEhg4TRcQ0bQabzQ3MgLwcREI075wRBVOUh/pub?gid=583322571&single=true&output=csv", // Q2
-      "https://docs.google.com/spreadsheets/d/e/2PACX-1vRG8oBk4Y39HEq7xq_DDg1WVCjN4TEf3opAJsEZi_yNEDEhg4TRcQ0bQabzQ3MgLwcREI075wRBVOUh/pub?gid=1439501887&single=true&output=csv", // Q3
-      "https://docs.google.com/spreadsheets/d/e/2PACX-1vRG8oBk4Y39HEq7xq_DDg1WVCjN4TEf3opAJsEZi_yNEDEhg4TRcQ0bQabzQ3MgLwcREI075wRBVOUh/pub?gid=1883694412&single=true&output=csv"  // Q4
+      "https://docs.google.com/spreadsheets/d/e/2PACX-1vRG8oBk4Y39HEq7xq_DDg1WVCjN4TEf3opAJsEZi_yNEDEhg4TRcQ0bQabzQ3MgLwcREI075wRBVOUh/pub?gid=921922711&single=true&output=csv",
+      "https://docs.google.com/spreadsheets/d/e/2PACX-1vRG8oBk4Y39HEq7xq_DDg1WVCjN4TEf3opAJsEZi_yNEDEhg4TRcQ0bQabzQ3MgLwcREI075wRBVOUh/pub?gid=583322571&single=true&output=csv",
+      "https://docs.google.com/spreadsheets/d/e/2PACX-1vRG8oBk4Y39HEq7xq_DDg1WVCjN4TEf3opAJsEZi_yNEDEhg4TRcQ0bQabzQ3MgLwcREI075wRBVOUh/pub?gid=1439501887&single=true&output=csv",
+      "https://docs.google.com/spreadsheets/d/e/2PACX-1vRG8oBk4Y39HEq7xq_DDg1WVCjN4TEf3opAJsEZi_yNEDEhg4TRcQ0bQabzQ3MgLwcREI075wRBVOUh/pub?gid=1883694412&single=true&output=csv"
     ];
 
     const CREW_LABELS = {
@@ -410,7 +360,7 @@
     let CURRENT_DATE = new Date();
     let SELECTED_DATE = new Date();
     let SEARCH_TERM = "";
-    let CURRENT_CREW_FILTER = "ALL";
+    let CREW_FILTER = "ALL";
 
     function formatDateKey(d) {
       const year = d.getFullYear();
@@ -424,13 +374,11 @@
       const v = String(str).trim();
       if (!v) return null;
 
-      // ISO
       if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
         const d = new Date(v + "T00:00:00");
         return isNaN(d.getTime()) ? null : d;
       }
 
-      // 01.12.2025 ou 01/12/2025
       const m = v.match(/^(\d{1,2})[./](\d{1,2})[./](\d{4})$/);
       if (m) {
         const day = parseInt(m[1], 10);
@@ -499,7 +447,6 @@
             const eventName = r["Event"] || r["event"] || "";
             if (!eventName || eventName.trim().length < 2) return null;
 
-            // Crew flags + liste
             const crewParts = [];
             const crewFlags = { TC: false, DG: false, JB: false };
             Object.keys(CREW_LABELS).forEach((col) => {
@@ -556,18 +503,15 @@
       }
     }
 
-    function matchesCrewFilter(e) {
-      if (CURRENT_CREW_FILTER === "ALL") return true;
-      if (CURRENT_CREW_FILTER === "TC") return !!e.crewTC;
-      if (CURRENT_CREW_FILTER === "DG") return !!e.crewDG;
-      if (CURRENT_CREW_FILTER === "JB") return !!e.crewJB;
-      return true;
-    }
-
     function getEventsByDateKey(dateKey) {
-      return ALL_EVENTS.filter(
-        (e) => e.dateKey === dateKey && matchesCrewFilter(e)
-      );
+      const dayEvents = ALL_EVENTS.filter((e) => e.dateKey === dateKey);
+      if (CREW_FILTER === "ALL") return dayEvents;
+      return dayEvents.filter((e) => {
+        if (CREW_FILTER === "TC") return e.crewTC;
+        if (CREW_FILTER === "DG") return e.crewDG;
+        if (CREW_FILTER === "JB") return e.crewJB;
+        return true;
+      });
     }
 
     function renderCalendar() {
@@ -761,7 +705,7 @@
 
         const carSpan = document.createElement("span");
         carSpan.innerHTML =
-          '<span class="event-meta-label">Car régie :</span> ' +
+          '<span class="event-meta-label">Moyen de Production :</span> ' +
           (e.carRegie || "-");
         meta.appendChild(carSpan);
 
@@ -849,61 +793,10 @@
     document
       .getElementById("crew-filter")
       .addEventListener("change", (e) => {
-        CURRENT_CREW_FILTER = e.target.value;
+        CREW_FILTER = e.target.value;
         renderCalendar();
         renderEventsPanel();
       });
-
-    document.getElementById("openForm").addEventListener("click", () => {
-      const box = document.getElementById("add-form");
-      box.style.display = box.style.display === "none" || box.style.display === ""
-        ? "block"
-        : "none";
-    });
-
-    document.getElementById("submitEvent").addEventListener("click", async () => {
-      const payload = {
-        date: document.getElementById("f_date").value,
-        time: document.getElementById("f_time").value,
-        event: document.getElementById("f_event").value,
-        location: document.getElementById("f_location").value,
-        provider: document.getElementById("f_provider").value,
-        camera: document.getElementById("f_camera").value,
-        delivery: document.getElementById("f_delivery").value,
-        internet: document.getElementById("f_internet").value,
-        client: document.getElementById("f_client").value,
-        tc: document.getElementById("f_tc").checked,
-        dg: document.getElementById("f_dg").checked,
-        jb: document.getElementById("f_jb").checked
-      };
-
-      if (!payload.date || !payload.event) {
-        alert("Minimum nécessaire : Date + Nom de la prod");
-        return;
-      }
-
-      try {
-        const res = await fetch("/api/add-event", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
-
-        if (res.ok) {
-          alert("Production ajoutée !");
-          document.getElementById("add-form").style.display = "none";
-          // recharge les datas (le CSV sera à jour au prochain export/pull)
-          loadSheetData();
-        } else {
-          const err = await res.json().catch(() => ({}));
-          console.error("Erreur API", err);
-          alert("Erreur lors de l’ajout (API).");
-        }
-      } catch (e) {
-        console.error(e);
-        alert("Erreur réseau lors de l’ajout.");
-      }
-    });
 
     loadSheetData();
   </script>
